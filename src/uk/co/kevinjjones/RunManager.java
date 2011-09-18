@@ -19,18 +19,16 @@ import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- *
- * @author kjones
- */
 public class RunManager {
 
     public class Run {
 
-        public int _id;
-        public Log _log;
-        public int _start;
-        public int _end;
+        private int _id;
+        private Log _log;
+        private int _start;
+        private int _end;
+        private double[] _distance;
+        private double[] _timeSlip;
 
         public Run(int id, Log log, int start, int end) {
             _id = id;
@@ -50,13 +48,43 @@ public class RunManager {
         public int length() {
             return _end - _start;
         }
+        
+        public void recalc(double[] maxDistance) {
+            _timeSlip=new double[length()];
+            for (int i=0; i<length() && i<maxDistance.length; i++) {
+                assert(distance(i)<=maxDistance[i]);
+                
+                // Count forward time slots until we reach same distance
+                int t=i;
+                while (t<length() && distance(t)<=maxDistance[i]) 
+                    t++;
+                _timeSlip[i]=t-i;
+            }
+        }
 
         public double speed(int i) {
             return _log.speed(_start + i);
         }
 
         public double distance(int i) {
-            return _log.distance(_start + i);
+            if (_distance==null) {
+                _distance=new double[length()];
+                double sum=0;
+                for (int k=0; k<length(); k++) {
+                    sum+=_log.distance(_start + k);
+                    _distance[k]=sum;
+                }
+            }
+            return _distance[i];
+        }
+        
+        public double timeSlip(int i) {
+            return _timeSlip[i]/10;
+        }
+        
+        
+        public double rpm(int i) {
+            return _log.rpm(_start + i);
         }
 
         public double tps(int i) {
@@ -95,7 +123,7 @@ public class RunManager {
             return _log.oilP(_start + i);
         }
 
-        public double slip(int i) {
+        public double wheelSlip(int i) {
             return _log.slip(_start + i);
         }
 
@@ -136,9 +164,31 @@ public class RunManager {
     }
 
     public void addLogfile(File file) throws RTException {
+        
+        // Parse logile and load runs from it
         Log l = new Log(file,_degC,_KPA,_KPH,_lambda);
         _logs.add(l);
         addRuns(l);
+        
+        // Calc max distance travelled at each time slot
+        double[] maxDistance=new double[0];
+        for(Run r : _runs) {
+            if (maxDistance.length<r.length()) {
+                double[] d=new double[r.length()];
+                System.arraycopy(maxDistance, 0, d, 0, maxDistance.length);
+                maxDistance=d;
+            }
+            
+            for (int i=0; i<r.length(); i++) {
+                if (r.distance(i)>maxDistance[i])
+                    maxDistance[i]=r.distance(i);
+            }
+        }
+
+        // Recalc runs for time slip using max Distance
+        for(Run r : _runs) {
+            r.recalc(maxDistance);
+        }
     }
 
     public Log[] getLogs() {

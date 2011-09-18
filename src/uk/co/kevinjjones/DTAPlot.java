@@ -157,7 +157,7 @@ public class DTAPlot {
         _lapCombo.setToolTipText("Drag & Drop logfile(s) to load them");
         menuArea.add(_lapCombo);
         menuArea.add(_speedCheck = new JCheckBox("Speed"));
-        menuArea.add(_timeSlipCheck = new JCheckBox("Time Slip"));
+        menuArea.add(_timeSlipCheck = new JCheckBox("Time Lag"));
         menuArea.add(_tpsCheck = new JCheckBox("TPS"));
         menuArea.add(_mapCheck = new JCheckBox("MAP"));
         menuArea.add(_rpmCheck = new JCheckBox("RPM"));
@@ -302,6 +302,18 @@ public class DTAPlot {
                     }
                 });
         
+        _rpmCheck.addItemListener(
+                new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        if (!_ignoreEvents) {
+                            RunManager.Run run = getSelectedRun();
+                            rpmTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                        }
+                    }
+                });
+        
         _timeSlipCheck.addItemListener(
                 new ItemListener() {
 
@@ -395,7 +407,7 @@ public class DTAPlot {
                     public void itemStateChanged(ItemEvent e) {
                         if (!_ignoreEvents) {
                             RunManager.Run run = getSelectedRun();
-                            slipTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                            wheelSlipTrace(run, e.getStateChange() == ItemEvent.SELECTED);
                         }
                     }
                 });
@@ -484,6 +496,7 @@ public class DTAPlot {
             _speedCheck.setEnabled(run.log().hasSpeed());
             _tpsCheck.setEnabled(run.log().hasTPS());
             _mapCheck.setEnabled(run.log().hasMAP());
+            _rpmCheck.setEnabled(run.log().hasRPM());
             _timeSlipCheck.setEnabled(run.log().hasDistance());
             _turboCheck.setEnabled(run.log().hasTurbo());
             _boostCheck.setEnabled(run.log().hasBoost());
@@ -497,6 +510,7 @@ public class DTAPlot {
             _speedCheck.setSelected(false);
             _tpsCheck.setSelected(false);
             _mapCheck.setSelected(false);
+            _rpmCheck.setSelected(false);
             _timeSlipCheck.setSelected(false);
             _turboCheck.setSelected(false);
             _boostCheck.setSelected(false);
@@ -519,7 +533,10 @@ public class DTAPlot {
                 if (traces[i].getName().equals(name + " MAP")) {
                     _mapCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Distance")) {
+                if (traces[i].getName().equals(name + " RPM")) {
+                    _rpmCheck.setSelected(true);
+                }
+                if (traces[i].getName().equals(name + " Time Lag")) {
                     _timeSlipCheck.setSelected(true);
                 }
                 if (traces[i].getName().equals(name + " Turbo")) {
@@ -528,9 +545,12 @@ public class DTAPlot {
                 if (traces[i].getName().equals(name + " Boost")) {
                     _turboCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " AFR")) {
+                if (run.isLambda() && traces[i].getName().equals(name + " Lambda")) {
                     _lambdaCheck.setSelected(true);
-                }
+                } 
+                if (!run.isLambda() && traces[i].getName().equals(name + " AFR")) {
+                    _lambdaCheck.setSelected(true);
+                } 
                 if (traces[i].getName().equals(name + " Water")) {
                     _waterCheck.setSelected(true);
                 }
@@ -556,6 +576,7 @@ public class DTAPlot {
             _speedCheck.setEnabled(false);
             _tpsCheck.setEnabled(false);
             _mapCheck.setEnabled(false);
+            _rpmCheck.setEnabled(false);
             _timeSlipCheck.setEnabled(false);
             _turboCheck.setEnabled(false);
             _boostCheck.setEnabled(false);
@@ -789,31 +810,50 @@ public class DTAPlot {
         }
     }
     
-    private synchronized void timeSlipTrace(RunManager.Run r, boolean on) {
-        String suffix=" (miles)";
-        if (r.isKPH())
-            suffix=" (km)";
-
-        ITrace2D trace = findTrace(r.name() + " Distance");
+    private synchronized void rpmTrace(RunManager.Run r, boolean on) {
+        
+        ITrace2D trace = findTrace(r.name() + " RPM");
         if (on) {
             if (trace == null) {
-                IAxis axis = getAxis("Distance"+suffix);
-                trace = new Trace(r.name() + " Distance");
+                IAxis axis = getAxis("RPM");
+                trace = new Trace(r.name() + " RPM");
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
-                double sum=0;
                 for (int i = 0; i < r.length(); i++) {
-                    sum+=r.distance(i);
-                    trace.addPoint(i * 0.1, sum);
+                    trace.addPoint(i * 0.1, r.rpm(i));
                 }
             }
         } else {
             if (trace != null) {
-                IAxis axis = getAxis("Distance"+suffix);
+                IAxis axis = getAxis("RPM");
                 axis.removeTrace(trace);
                 _chart.removeTrace(trace);
-                if (findTraceContains("Distance") == null) {
-                    cleanAxis("Distance"+suffix);
+                if (findTraceContains("RPM") == null) {
+                    cleanAxis("RPM");
+                }
+            }
+        }
+    }
+    
+    private synchronized void timeSlipTrace(RunManager.Run r, boolean on) {
+        ITrace2D trace = findTrace(r.name() + " Time Lag");
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis("Time Lag (sec)");
+                trace = new Trace(r.name() + " Time Lag");
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                for (int i = 0; i < r.length(); i++) {
+                    trace.addPoint(i * 0.1, r.timeSlip(i));
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis("Time Lag (sec)");
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains("Time Lag") == null) {
+                    cleanAxis("Time Lag (sec)");
                 }
             }
         }
@@ -881,11 +921,11 @@ public class DTAPlot {
         if (r.isDegC())
             suffix=" (\u00B0C)";
 
-        ITrace2D trace = findTrace(r.name() + " Air");
+        ITrace2D trace = findTrace(r.name() + " Air Temp");
         if (on) {
             if (trace == null) {
-                IAxis axis = getAxis("Air"+suffix);
-                trace = new Trace(r.name() + " Air");
+                IAxis axis = getAxis("Air Temp"+suffix);
+                trace = new Trace(r.name() + " Air Temp");
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
                 for (int i = 0; i < r.length(); i++) {
@@ -894,11 +934,11 @@ public class DTAPlot {
             }
         } else {
             if (trace != null) {
-                IAxis axis = getAxis("Air"+suffix);
+                IAxis axis = getAxis("Air Temp"+suffix);
                 axis.removeTrace(trace);
                 _chart.removeTrace(trace);
-                if (findTraceContains("Air") == null) {
-                    cleanAxis("Air"+suffix);
+                if (findTraceContains("Air Temp") == null) {
+                    cleanAxis("Air Temp"+suffix);
                 }
             }
         }
@@ -910,11 +950,11 @@ public class DTAPlot {
         if (r.isDegC())
             suffix=" (\u00B0C)";
 
-        ITrace2D trace = findTrace(r.name() + " Oil");
+        ITrace2D trace = findTrace(r.name() + " Oil Temp");
         if (on) {
             if (trace == null) {
-                IAxis axis = getAxis("Oil"+suffix);
-                trace = new Trace(r.name() + " Oil");
+                IAxis axis = getAxis("Oil Temp"+suffix);
+                trace = new Trace(r.name() + " Oil Temp");
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
                 for (int i = 0; i < r.length(); i++) {
@@ -923,17 +963,17 @@ public class DTAPlot {
             }
         } else {
             if (trace != null) {
-                IAxis axis = getAxis("Oil"+suffix);
+                IAxis axis = getAxis("Oil Temp"+suffix);
                 axis.removeTrace(trace);
                 _chart.removeTrace(trace);
-                if (findTraceContains("Oil") == null) {
-                    cleanAxis("Oil"+suffix);
+                if (findTraceContains("Oil Temp") == null) {
+                    cleanAxis("Oil Temp"+suffix);
                 }
             }
         }
     }
 
-    private synchronized void slipTrace(RunManager.Run r, boolean on) {
+    private synchronized void wheelSlipTrace(RunManager.Run r, boolean on) {
 
         ITrace2D trace = findTrace(r.name() + " Slip");
         if (on) {
@@ -943,7 +983,7 @@ public class DTAPlot {
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
                 for (int i = 0; i < r.length(); i++) {
-                    double slip = r.slip(i);
+                    double slip = r.wheelSlip(i);
                     if (slip < -25) {
                         slip = -25;
                     }
@@ -955,8 +995,6 @@ public class DTAPlot {
             }
         } else {
             if (trace != null) {
-                IAxis axis = getAxis("Slip %");
-                axis.removeTrace(trace);
                 _chart.removeTrace(trace);
                 if (findTraceContains("Slip") == null) {
                     cleanAxis("Slip %");

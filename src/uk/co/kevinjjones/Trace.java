@@ -17,10 +17,6 @@ package uk.co.kevinjjones;
 
 import info.monitorenter.gui.chart.traces.Trace2DSimple;
 
-/**
- *
- * @author kjones
- */
 public class Trace extends Trace2DSimple {
     
     public Trace(String name) {

@@ -27,10 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author kjones
- */
 public class Log {
 
     private String _name;
@@ -38,6 +34,7 @@ public class Log {
     private double[] _speed = null;
     private double[] _distance = null;
     private int _speedCol;
+    private int _rpmCol;
     private int _tpsCol;
     private int _mapCol;
     private int _lambdaCol;
@@ -139,6 +136,7 @@ public class Log {
 
         // Now locate columns
         _speedCol=-1;
+        _rpmCol=-1;
         _tpsCol=-1;
         _mapCol=-1;
         _lambdaCol=-1;
@@ -157,37 +155,39 @@ public class Log {
                 if (nextLine[i].equals("L U SP")) {
                     _speedCol = i;
                 }
-                if (nextLine[i].equals("THROT")) {
+                else if (nextLine[i].equals("RPM")) {
+                    _rpmCol = i;
+                }
+                else if (nextLine[i].equals("THROT")) {
                     _tpsCol = i;
                 }
-                if (nextLine[i].equals("MAP")) {
+                else if (nextLine[i].equals("MAP")) {
                     _mapCol = i;
                 }
-                if (nextLine[i].equals("LAMB")) {
+                else if (nextLine[i].equals("LAMB")) {
                     _lambdaCol = i;
                 }
-                if (nextLine[i].equals("WATER")) {
+                else if (nextLine[i].equals("WATER")) {
                     _waterCol = i;
                 }
-                if (nextLine[i].equals("AIR")) {
+                else if (nextLine[i].equals("AIR")) {
                     _airTCol = i;
                 }
-                if (nextLine[i].equals("OIL T")) {
+                else if (nextLine[i].equals("OIL T")) {
                     _oilTCol = i;
                 }
-                if (nextLine[i].equals("OIL P")) {
+                else if (nextLine[i].equals("OIL P")) {
                     _oilPCol = i;
                 }
-                if (nextLine[i].equals("SLIP%")) {
+                else if (nextLine[i].equals("SLIP%")) {
                     _slipCol = i;
                 }
-                if (nextLine[i].equals("TURB %")) {
+                else if (nextLine[i].equals("TURB %")) {
                     _turboCol = i;
                 }
-                if (nextLine[i].equals("A1 VAL")) {
+                else if (nextLine[i].equals("A1 VAL")) {
                     _boostCol = i;
                 }
-                
             }
             
             // Check we at least have speed
@@ -211,7 +211,7 @@ public class Log {
         for (int r=0; r<_rows.length-2;r++) {
             String[] values=(String[])_rows[r];
             _speed[r]=Double.parseDouble(values[_speedCol]);
-            _distance[r]=_speed[r]/3600*0.1;
+            _distance[r]=(_speed[r]/3600)*0.1;
         }
     }
     
@@ -225,6 +225,10 @@ public class Log {
 
     public boolean hasSpeed() {
         return _speedCol!=-1;
+    }
+    
+    public boolean hasRPM() {
+        return _rpmCol!=-1;
     }
     
     public boolean hasDistance() {
@@ -285,6 +289,14 @@ public class Log {
         assert index<length();
         
         return _distance[index];
+    }
+    
+    public double rpm(int index) {
+        assert hasTPS();
+        assert index>=0;
+        assert index<length();
+        
+        return Double.parseDouble(((String[])_rows[index])[_rpmCol]);
     }
     
     public double tps(int index) {
