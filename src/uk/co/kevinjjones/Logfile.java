@@ -20,6 +20,10 @@ import java.io.PrintStream;
 import java.io.StringReader;
 
 import au.com.bytecode.opencsv.CSVReader;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class Logfile {
 
@@ -34,6 +38,50 @@ public class Logfile {
 	public static final int RpmUnits=500;
 	public static final int RpmTotalUnits=23;
 	public static final int RpmMax=RpmUnits*RpmTotalUnits;
+    
+    public static void main(String[] args) throws Exception {
+        byte[] data=readFile(new FileInputStream(new File(args[0])));
+        Logfile l=Logfile.getInstance();
+        l.loadFile(args[0], data);
+        l.printAFRMap(System.out);
+    }
+    
+    static byte[] readFile(FileInputStream fis) throws Exception {
+        InputStream in = null;
+        byte[] out = new byte[0];
+
+        try {
+            in = new BufferedInputStream(fis);
+
+            // the length of a buffer can vary
+            int bufLen = 20000 * 1024;
+            byte[] buf = new byte[bufLen];
+            byte[] tmp = null;
+            int len = 0;
+            while ((len = in.read(buf, 0, bufLen)) > 0) {
+                // extend array
+                tmp = new byte[out.length + len];
+
+                // copy data
+                System.arraycopy(out, 0, tmp, 0, out.length);
+                System.arraycopy(buf, 0, tmp, out.length, len);
+
+                out = tmp;
+                tmp = null;
+            }
+
+        } finally {
+            // always close the stream
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (Exception e) {
+                }
+            }
+        }
+        return out;
+    }
+    
 
 	protected Logfile() {
 		// Exists only to defeat instantiation.

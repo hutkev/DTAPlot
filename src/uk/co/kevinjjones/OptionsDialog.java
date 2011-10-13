@@ -17,6 +17,8 @@
 package uk.co.kevinjjones;
 
 import java.awt.Container;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JDialog;
 
 public class OptionsDialog extends javax.swing.JPanel {
@@ -60,11 +62,9 @@ public class OptionsDialog extends javax.swing.JPanel {
         AF = new javax.swing.JRadioButton();
         this.AF.setSelected(!RunManager.getInstance().isLambda());
         jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
-
-        setPreferredSize(new java.awt.Dimension(200, 325));
+        jLabel5 = new javax.swing.JLabel();
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Temperature"));
         jPanel2.setForeground(new java.awt.Color(179, 68, 68));
@@ -93,7 +93,7 @@ public class OptionsDialog extends javax.swing.JPanel {
                 .addComponent(DegC)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(DegF)
-                .addContainerGap(29, Short.MAX_VALUE))
+                .addContainerGap(40, Short.MAX_VALUE))
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -130,7 +130,7 @@ public class OptionsDialog extends javax.swing.JPanel {
                 .addComponent(KPA)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(PSI)
-                .addContainerGap(30, Short.MAX_VALUE))
+                .addContainerGap(41, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -167,7 +167,7 @@ public class OptionsDialog extends javax.swing.JPanel {
                 .addComponent(KPH)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(MPH)
-                .addContainerGap(59, Short.MAX_VALUE))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -204,7 +204,7 @@ public class OptionsDialog extends javax.swing.JPanel {
                 .addComponent(Lambda)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(AF)
-                .addContainerGap(36, Short.MAX_VALUE))
+                .addContainerGap(47, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -215,8 +215,6 @@ public class OptionsDialog extends javax.swing.JPanel {
 
         jLabel1.setText("Set these options to");
 
-        jLabel2.setText("match DTASWin settings");
-
         jLabel3.setText("from File->System Units");
 
         jButton1.setText("Done");
@@ -226,47 +224,42 @@ public class OptionsDialog extends javax.swing.JPanel {
             }
         });
 
+        jLabel5.setText("match DTASWin settings");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(10, 10, 10)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
-                                .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
-                                .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 172, Short.MAX_VALUE)
-                                .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel3)
-                                .addComponent(jLabel2))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(13, 13, 13)
-                        .addComponent(jLabel1)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(150, Short.MAX_VALUE)
-                .addComponent(jButton1)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jButton1)
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
+                        .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
+                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
+                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel5)
+                        .addComponent(jLabel1)
+                        .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jLabel1)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(20, 20, 20)
+                        .addComponent(jLabel5)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jLabel3)
-                .addGap(12, 12, 12)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(10, 10, 10)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -286,35 +279,67 @@ public class OptionsDialog extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void DegFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DegFActionPerformed
-        RunManager.getInstance().setDegC(false);
+        try {
+            RunManager.getInstance().setDegC(false);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_DegFActionPerformed
 
     private void DegCActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DegCActionPerformed
-        RunManager.getInstance().setDegC(true);
+        try {
+            RunManager.getInstance().setDegC(true);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_DegCActionPerformed
 
     private void KPAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_KPAActionPerformed
-        RunManager.getInstance().setKPA(true);
+        try {
+            RunManager.getInstance().setKPA(true);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_KPAActionPerformed
 
     private void PSIActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PSIActionPerformed
-        RunManager.getInstance().setKPA(false);
+        try {
+            RunManager.getInstance().setKPA(false);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_PSIActionPerformed
 
     private void KPHActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_KPHActionPerformed
-        RunManager.getInstance().setKPH(true);
+        try {
+            RunManager.getInstance().setKPH(true);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_KPHActionPerformed
 
     private void MPHActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MPHActionPerformed
-        RunManager.getInstance().setKPH(false);
+        try {
+            RunManager.getInstance().setKPH(false);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_MPHActionPerformed
 
     private void LambdaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LambdaActionPerformed
-        RunManager.getInstance().setLambda(true);
+        try {
+            RunManager.getInstance().setLambda(true);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_LambdaActionPerformed
 
     private void AFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AFActionPerformed
-        RunManager.getInstance().setLambda(false);
+        try {
+            RunManager.getInstance().setLambda(false);
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_AFActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -332,8 +357,8 @@ public class OptionsDialog extends javax.swing.JPanel {
     private javax.swing.ButtonGroup buttonGroup4;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;

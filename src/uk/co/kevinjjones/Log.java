@@ -31,9 +31,11 @@ public class Log {
 
     private String _name;
     private Object[] _rows = null;
-    private double[] _speed = null;
+    private double[] _leftSpeed = null;
+    private double[] _rightSpeed = null;
     private double[] _distance = null;
-    private int _speedCol;
+    private int _leftSpeedCol;
+    private int _rightSpeedCol;
     private int _rpmCol;
     private int _tpsCol;
     private int _mapCol;
@@ -49,6 +51,7 @@ public class Log {
     private boolean _KPA = true;
     private boolean _KPH = true;
     private boolean _lambda = true;
+    private boolean _hasRightSpeed = false;
 
     static byte[] readFile(FileInputStream fis) throws Exception {
         InputStream in = null;
@@ -135,7 +138,8 @@ public class Log {
         }
 
         // Now locate columns
-        _speedCol=-1;
+        _leftSpeedCol=-1;
+        _rightSpeedCol=-1;
         _rpmCol=-1;
         _tpsCol=-1;
         _mapCol=-1;
@@ -153,7 +157,10 @@ public class Log {
             int NUMindex = nextLine.length;
             for (int i = 0; i < NUMindex; i++) {
                 if (nextLine[i].equals("L U SP")) {
-                    _speedCol = i;
+                    _leftSpeedCol = i;
+                }
+                else if (nextLine[i].equals("R U SP")) {
+                    _rightSpeedCol = i;
                 }
                 else if (nextLine[i].equals("RPM")) {
                     _rpmCol = i;
@@ -191,8 +198,8 @@ public class Log {
             }
             
             // Check we at least have speed
-            if (_speedCol == -1) {
-                throw new LogException("No speed column (L U SP) found in "+
+            if (_leftSpeedCol == -1 && _rightSpeedCol==-1) {
+                throw new LogException("No speed column (L U SP or R U SP) found in "+
                         f.getAbsolutePath()+", maybe this is not a logfile");
             }
         } else {
@@ -206,12 +213,23 @@ public class Log {
         _rows=reverse.toArray();
        
         // Finally cache speed & calc distance column
-        _speed = new double [_rows.length-2];
+        if (_leftSpeedCol!=-1)
+            _leftSpeed = new double [_rows.length-2];
+        if (_rightSpeedCol!=-1)
+            _rightSpeed = new double [_rows.length-2];
         _distance = new double [_rows.length-2];
+        
         for (int r=0; r<_rows.length-2;r++) {
             String[] values=(String[])_rows[r];
-            _speed[r]=Double.parseDouble(values[_speedCol]);
-            _distance[r]=(_speed[r]/3600)*0.1;
+            if (_leftSpeedCol!=-1) {
+                _leftSpeed[r]=Double.parseDouble(values[_leftSpeedCol]);
+            }
+            if (_rightSpeedCol!=-1) {
+                _rightSpeed[r]=Double.parseDouble(values[_rightSpeedCol]);
+                if (_rightSpeed[r]>0)
+                    _hasRightSpeed=true;
+            }
+            _distance[r]=(speed(r)/3600)*0.1;
         }
     }
     
@@ -224,7 +242,27 @@ public class Log {
     }
 
     public boolean hasSpeed() {
-        return _speedCol!=-1;
+        return _leftSpeedCol!=-1 || _rightSpeedCol!=-1;
+    }
+    
+    public boolean hasLeftSpeed() {
+        return _leftSpeedCol!=-1;
+    }
+    
+    public boolean hasRightSpeed() {
+        return _hasRightSpeed;
+    }
+    
+    public boolean hasSteer() {
+        return hasLeftSpeed() && hasRightSpeed();
+    }
+    
+    public boolean hasLatAccel() {
+        return hasSteer();
+    }
+    
+    public boolean hasLongAccel() {
+        return hasSpeed();
     }
     
     public boolean hasRPM() {
@@ -280,7 +318,30 @@ public class Log {
         assert index>=0;
         assert index<length();
         
-        return _speed[index];
+        
+        if (_leftSpeedCol!=-1 && _rightSpeedCol!=-1 &&
+                _leftSpeed[index]>0 && _rightSpeed[index]>0)
+            return (_leftSpeed[index]+_rightSpeed[index])/2;
+        else if (_leftSpeedCol!=-1) 
+            return _leftSpeed[index];
+        else 
+            return _rightSpeed[index];
+    }
+    
+    public double leftSpeed(int index) {
+        assert hasLeftSpeed();
+        assert index>=0;
+        assert index<length();
+        
+        return _leftSpeed[index];
+    }
+    
+    public double rightSpeed(int index) {
+        assert hasRightSpeed();
+        assert index>=0;
+        assert index<length();
+        
+        return _rightSpeed[index];
     }
     
     public double distance(int index) {

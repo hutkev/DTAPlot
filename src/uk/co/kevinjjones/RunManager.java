@@ -1,23 +1,25 @@
 /**
- Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
  */
 package uk.co.kevinjjones;
 
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 public class RunManager {
 
@@ -48,41 +50,83 @@ public class RunManager {
         public int length() {
             return _end - _start;
         }
-        
+
         public void recalc(double[] maxDistance) {
-            _timeSlip=new double[length()];
-            for (int i=0; i<length() && i<maxDistance.length; i++) {
-                assert(distance(i)<=maxDistance[i]);
-                
+            _timeSlip = new double[length()];
+            for (int i = 0; i < length() && i < maxDistance.length; i++) {
+                assert (distance(i) <= maxDistance[i]);
+
                 // Count forward time slots until we reach same distance
-                int t=i;
-                while (t<length() && distance(t)<=maxDistance[i]) 
+                int t = i;
+                while (t < length() && distance(t) <= maxDistance[i]) {
                     t++;
-                _timeSlip[i]=t-i;
+                }
+                _timeSlip[i] = t - i;
             }
         }
 
-        public double speed(int i) {
+        public double speedNative(int i) {
             return _log.speed(_start + i);
+        }
+        
+        public double speedKPH(int i) {
+            if (isKPH())
+                return speedNative(i);
+            else
+                return 1.609344*speedNative(i);
         }
 
         public double distance(int i) {
-            if (_distance==null) {
-                _distance=new double[length()];
-                double sum=0;
-                for (int k=0; k<length(); k++) {
-                    sum+=_log.distance(_start + k);
-                    _distance[k]=sum;
+            if (_distance == null) {
+                _distance = new double[length()];
+                double sum = 0;
+                for (int k = 0; k < length(); k++) {
+                    sum += _log.distance(_start + k);
+                    _distance[k] = sum;
                 }
             }
             return _distance[i];
         }
-        
-        public double timeSlip(int i) {
-            return _timeSlip[i]/10;
+
+        public double degrees(int i) {
+            
+            if (_log.hasLeftSpeed() && _log.hasRightSpeed()) {
+                
+                double ls=_log.leftSpeed(_start+i);
+                double rs=_log.rightSpeed(_start+i);
+                
+                Car c=Car.getInstance();
+                boolean rightTurn=(ls>rs);
+                if (rightTurn)
+                    return c.getDegrees(ls,rs);
+                else
+                    return -c.getDegrees(rs,ls);
+            }
+            return 0;
         }
         
+        public double latAccel(int i) {
+            
+            if (_log.hasLeftSpeed() && _log.hasRightSpeed()) {
+                
+                double ls=_log.leftSpeed(_start+i);
+                double rs=_log.rightSpeed(_start+i);
+                
+                Car c=Car.getInstance();
+                boolean rightTurn=(ls>rs);
+                if (rightTurn)
+                    return c.getLatAccel(ls,rs);
+                else
+                    return -c.getLatAccel(rs,ls);
+            }
+            return 0;
+        }
         
+
+        public double timeSlip(int i) {
+            return _timeSlip[i] / 10;
+        }
+
         public double rpm(int i) {
             return _log.rpm(_start + i);
         }
@@ -152,10 +196,15 @@ public class RunManager {
     private boolean _lambda = true;
 
     protected RunManager() {
-        // Exists only to defeat instantiation.
+        // Load preferences
+        Preferences prefs = Preferences.userNodeForPackage(RunManager.class);
+        _degC=prefs.getBoolean("DegreesC", true);
+        _KPA=prefs.getBoolean("KPA", true);
+        _KPH=prefs.getBoolean("KPH", true);
+        _lambda=prefs.getBoolean("Lambda", true);
     }
 
-    // Simgleton access
+    // Singleton access
     public static RunManager getInstance() {
         if (_instance == null) {
             _instance = new RunManager();
@@ -164,29 +213,30 @@ public class RunManager {
     }
 
     public void addLogfile(File file) throws RTException {
-        
+
         // Parse logile and load runs from it
-        Log l = new Log(file,_degC,_KPA,_KPH,_lambda);
+        Log l = new Log(file, _degC, _KPA, _KPH, _lambda);
         _logs.add(l);
         addRuns(l);
-        
+
         // Calc max distance travelled at each time slot
-        double[] maxDistance=new double[0];
-        for(Run r : _runs) {
-            if (maxDistance.length<r.length()) {
-                double[] d=new double[r.length()];
+        double[] maxDistance = new double[0];
+        for (Run r : _runs) {
+            if (maxDistance.length < r.length()) {
+                double[] d = new double[r.length()];
                 System.arraycopy(maxDistance, 0, d, 0, maxDistance.length);
-                maxDistance=d;
+                maxDistance = d;
             }
-            
-            for (int i=0; i<r.length(); i++) {
-                if (r.distance(i)>maxDistance[i])
-                    maxDistance[i]=r.distance(i);
+
+            for (int i = 0; i < r.length(); i++) {
+                if (r.distance(i) > maxDistance[i]) {
+                    maxDistance[i] = r.distance(i);
+                }
             }
         }
 
         // Recalc runs for time slip using max Distance
-        for(Run r : _runs) {
+        for (Run r : _runs) {
             r.recalc(maxDistance);
         }
     }
@@ -290,36 +340,53 @@ public class RunManager {
         }
         return -1;
     }
+    
+    private void flushPrefs() throws RTException {
+        Preferences prefs = Preferences.userNodeForPackage(RunManager.class);
+        prefs.putBoolean("DegreesC", _degC);
+        prefs.putBoolean("KPA", _KPA);
+        prefs.putBoolean("KPH", _KPH);
+        prefs.putBoolean("Lambda", _lambda);
+        try {
+            prefs.flush();
+        } catch (BackingStoreException ex) {
+            throw new RTException("Failed to save user preferences",ex);
+        }
+    }
 
     public boolean isDegC() {
         return _degC;
     }
 
-    public void setDegC(boolean isDegC) {
+    public void setDegC(boolean isDegC) throws RTException {
         _degC = isDegC;
+        flushPrefs();
     }
 
     public boolean isKPA() {
         return _KPA;
     }
 
-    public void setKPA(boolean isKPA) {
+    public void setKPA(boolean isKPA) throws RTException {
         _KPA = isKPA;
+        flushPrefs();
     }
 
     public boolean isKPH() {
         return _KPH;
     }
 
-    public void setKPH(boolean isKPH) {
+    public void setKPH(boolean isKPH) throws RTException {
         _KPH = isKPH;
+        flushPrefs();
     }
 
     public boolean isLambda() {
         return _lambda;
     }
 
-    public void setLambda(boolean isLambda) {
+    public void setLambda(boolean isLambda) throws RTException {
         _lambda = isLambda;
+        flushPrefs();
     }
 }

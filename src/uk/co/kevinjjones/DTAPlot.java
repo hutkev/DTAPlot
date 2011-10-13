@@ -53,16 +53,16 @@ public class DTAPlot {
     private ZoomableChart _chart;
     private JComboBox _lapCombo;
     private JCheckBox _speedCheck;
+    private JCheckBox _latAccelCheck;
+    private JCheckBox _longAccelCheck;
+    private JCheckBox _steerCheck;
     private JCheckBox _tpsCheck;
     private JCheckBox _mapCheck;
     private JCheckBox _rpmCheck;
     private JCheckBox _lambdaCheck;
     private JCheckBox _turboCheck;
     private JCheckBox _boostCheck;
-    private JCheckBox _waterCheck;
-    private JCheckBox _airTCheck;
-    private JCheckBox _oilTCheck;
-    private JCheckBox _oilPCheck;
+    private JCheckBox _tempsCheck;
     private JCheckBox _wheelSlipCheck;
     private JCheckBox _timeSlipCheck;
     private JButton _clearBtn;
@@ -158,18 +158,17 @@ public class DTAPlot {
         menuArea.add(_lapCombo);
         menuArea.add(_speedCheck = new JCheckBox("Speed"));
         menuArea.add(_timeSlipCheck = new JCheckBox("Time Lag"));
-        menuArea.add(_tpsCheck = new JCheckBox("TPS"));
+        _latAccelCheck = new JCheckBox("Lat. Accel.");
+        menuArea.add(_longAccelCheck = new JCheckBox("Long. Accel."));
+        menuArea.add(_steerCheck = new JCheckBox("Steering Estimate"));
+        menuArea.add(_wheelSlipCheck = new JCheckBox("Wheel Slip %"));
+        menuArea.add(_tpsCheck = new JCheckBox("Throttle"));
         menuArea.add(_mapCheck = new JCheckBox("MAP"));
         menuArea.add(_rpmCheck = new JCheckBox("RPM"));
-        menuArea.add(_turboCheck = new JCheckBox("Turbo %"));
-        menuArea.add(_boostCheck = new JCheckBox("Boost"));
-        menuArea.add(_lambdaCheck = new JCheckBox("AFR"));
-        menuArea.add(_waterCheck = new JCheckBox("Water"));
-        menuArea.add(_airTCheck = new JCheckBox("Air Temp"));
-        menuArea.add(_oilTCheck = new JCheckBox("Oil Temp"));
-        menuArea.add(_oilPCheck = new JCheckBox("Oil Pressure"));
-        menuArea.add(_wheelSlipCheck = new JCheckBox("Wheel Slip"));
-
+        menuArea.add(_turboCheck = new JCheckBox("Turbo WG %"));
+        menuArea.add(_boostCheck = new JCheckBox("Boost (Ana1)"));
+        menuArea.add(_lambdaCheck = new JCheckBox("AFR/Lambda"));
+        menuArea.add(_tempsCheck = new JCheckBox("Temps"));
         menuArea.add(_clearBtn = new JButton("Clear Traces"));
         menuArea.add(_resetZoomBtn = new JButton("Reset Zoom"));
         menuArea.add(_optionsBtn = new JButton("Options"));
@@ -277,6 +276,43 @@ public class DTAPlot {
                         }
                     }
                 });
+        
+        _latAccelCheck.addItemListener(
+                new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        if (!_ignoreEvents) {
+                            RunManager.Run run = getSelectedRun();
+                            latAccelTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                        }
+                    }
+                });
+        
+        _longAccelCheck.addItemListener(
+                new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        if (!_ignoreEvents) {
+                            RunManager.Run run = getSelectedRun();
+                            longAccelTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                        }
+                    }
+                });
+        
+        
+        _steerCheck.addItemListener(
+                new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        if (!_ignoreEvents) {
+                            RunManager.Run run = getSelectedRun();
+                            steerTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                        }
+                    }
+                });
 
         _tpsCheck.addItemListener(
                 new ItemListener() {
@@ -363,43 +399,6 @@ public class DTAPlot {
                     }
                 });
 
-        _waterCheck.addItemListener(
-                new ItemListener() {
-
-                    @Override
-                    public void itemStateChanged(ItemEvent e) {
-                        if (!_ignoreEvents) {
-                            RunManager.Run run = getSelectedRun();
-                            waterTrace(run, e.getStateChange() == ItemEvent.SELECTED);
-                        }
-                    }
-                });
-
-
-        _airTCheck.addItemListener(
-                new ItemListener() {
-
-                    @Override
-                    public void itemStateChanged(ItemEvent e) {
-                        if (!_ignoreEvents) {
-                            RunManager.Run run = getSelectedRun();
-                            airTrace(run, e.getStateChange() == ItemEvent.SELECTED);
-                        }
-                    }
-                });
-
-        _oilTCheck.addItemListener(
-                new ItemListener() {
-
-                    @Override
-                    public void itemStateChanged(ItemEvent e) {
-                        if (!_ignoreEvents) {
-                            RunManager.Run run = getSelectedRun();
-                            oilTTrace(run, e.getStateChange() == ItemEvent.SELECTED);
-                        }
-                    }
-                });
-
         _wheelSlipCheck.addItemListener(
                 new ItemListener() {
 
@@ -411,6 +410,19 @@ public class DTAPlot {
                         }
                     }
                 });
+        
+        _tempsCheck.addItemListener(
+                new ItemListener() {
+
+                    @Override
+                    public void itemStateChanged(ItemEvent e) {
+                        if (!_ignoreEvents) {
+                            RunManager.Run run = getSelectedRun();
+                            tempsTrace(run, e.getStateChange() == ItemEvent.SELECTED);
+                        }
+                    }
+                });
+        
 
 
         // Enable the termination button [cross on the upper right edge]: 
@@ -442,9 +454,9 @@ public class DTAPlot {
         
         int cx=l.x+d.width/2;    
         int cy=l.y+d.height/2;    
-        cx-=225/2;
-        cy-=325/2;
-        dialog.setBounds(cx,cy,225,325);
+        cx-=400/2;
+        cy-=360/2;
+        dialog.setBounds(cx,cy,400,360);
         dialog.pack();
         dialog.setVisible(true);
     }
@@ -494,6 +506,9 @@ public class DTAPlot {
             _ignoreEvents = true;
 
             _speedCheck.setEnabled(run.log().hasSpeed());
+            _latAccelCheck.setEnabled(run.log().hasLatAccel());
+            _longAccelCheck.setEnabled(run.log().hasLongAccel());
+            _steerCheck.setEnabled(run.log().hasSteer());
             _tpsCheck.setEnabled(run.log().hasTPS());
             _mapCheck.setEnabled(run.log().hasMAP());
             _rpmCheck.setEnabled(run.log().hasRPM());
@@ -501,24 +516,23 @@ public class DTAPlot {
             _turboCheck.setEnabled(run.log().hasTurbo());
             _boostCheck.setEnabled(run.log().hasBoost());
             _lambdaCheck.setEnabled(run.log().hasLambda());
-            _waterCheck.setEnabled(run.log().hasWater());
-            _oilTCheck.setEnabled(run.log().hasOilT());
-            _oilPCheck.setEnabled(run.log().hasOilP());
-            _airTCheck.setEnabled(run.log().hasAirT());
+            _tempsCheck.setEnabled(run.log().hasWater()
+                    || run.log().hasOilT()
+                    || run.log().hasAirT());
             _wheelSlipCheck.setEnabled(run.log().hasSlip());
 
             _speedCheck.setSelected(false);
             _tpsCheck.setSelected(false);
+            _latAccelCheck.setSelected(false);
+            _longAccelCheck.setSelected(false);
+            _steerCheck.setSelected(false);
             _mapCheck.setSelected(false);
             _rpmCheck.setSelected(false);
             _timeSlipCheck.setSelected(false);
             _turboCheck.setSelected(false);
             _boostCheck.setSelected(false);
             _lambdaCheck.setSelected(false);
-            _waterCheck.setSelected(false);
-            _oilTCheck.setSelected(false);
-            _oilPCheck.setSelected(false);
-            _airTCheck.setSelected(false);
+            _tempsCheck.setSelected(false);
             _wheelSlipCheck.setSelected(false);
 
             ITrace2D[] traces = _chart.getTraces().toArray(new ITrace2D[0]);
@@ -527,43 +541,45 @@ public class DTAPlot {
                 if (traces[i].getName().equals(name + " Speed")) {
                     _speedCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Throttle")) {
+                else if (traces[i].getName().equals(name + " Lat. Accel.")) {
+                    _latAccelCheck.setSelected(true);
+                } 
+                else if (traces[i].getName().equals(name + " Long. Accel.")) {
+                    _longAccelCheck.setSelected(true);
+                } 
+                else if (traces[i].getName().equals(name + " Steering Angle")) {
+                    _steerCheck.setSelected(true);
+                }
+                else if (traces[i].getName().equals(name + " Throttle")) {
                     _tpsCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " MAP")) {
+                else if (traces[i].getName().equals(name + " MAP")) {
                     _mapCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " RPM")) {
+                else if (traces[i].getName().equals(name + " RPM")) {
                     _rpmCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Time Lag")) {
+                else if (traces[i].getName().equals(name + " Time Lag")) {
                     _timeSlipCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Turbo")) {
+                else if (traces[i].getName().equals(name + " Turbo")) {
                     _turboCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Boost")) {
+                else if (traces[i].getName().equals(name + " Boost")) {
                     _turboCheck.setSelected(true);
                 }
-                if (run.isLambda() && traces[i].getName().equals(name + " Lambda")) {
+                else if (run.isLambda() && traces[i].getName().equals(name + " Lambda")) {
                     _lambdaCheck.setSelected(true);
                 } 
-                if (!run.isLambda() && traces[i].getName().equals(name + " AFR")) {
+                else if (!run.isLambda() && traces[i].getName().equals(name + " AFR")) {
                     _lambdaCheck.setSelected(true);
                 } 
-                if (traces[i].getName().equals(name + " Water")) {
-                    _waterCheck.setSelected(true);
+                else if (traces[i].getName().equals(name + " Water") ||
+                    traces[i].getName().equals(name + " Oil Temp") ||
+                    traces[i].getName().equals(name + " Air Temp")) {
+                    _tempsCheck.setSelected(true);
                 }
-                if (traces[i].getName().equals(name + " Oil Temp")) {
-                    _oilTCheck.setSelected(true);
-                }
-                if (traces[i].getName().equals(name + " Oil Pressure")) {
-                    _oilPCheck.setSelected(true);
-                }
-                if (traces[i].getName().equals(name + " Air Temp")) {
-                    _airTCheck.setSelected(true);
-                }
-                if (traces[i].getName().equals(name + " Slip")) {
+                else if (traces[i].getName().equals(name + " Slip")) {
                     _wheelSlipCheck.setSelected(true);
                 }
             }
@@ -574,6 +590,9 @@ public class DTAPlot {
             _ignoreEvents = false;
         } else {
             _speedCheck.setEnabled(false);
+            _latAccelCheck.setEnabled(false);
+            _longAccelCheck.setEnabled(false);
+            _steerCheck.setEnabled(false);
             _tpsCheck.setEnabled(false);
             _mapCheck.setEnabled(false);
             _rpmCheck.setEnabled(false);
@@ -581,10 +600,7 @@ public class DTAPlot {
             _turboCheck.setEnabled(false);
             _boostCheck.setEnabled(false);
             _lambdaCheck.setEnabled(false);
-            _waterCheck.setEnabled(false);
-            _oilTCheck.setEnabled(false);
-            _oilPCheck.setEnabled(false);
-            _airTCheck.setEnabled(false);
+            _tempsCheck.setEnabled(false);
             _wheelSlipCheck.setEnabled(false);
         }
     }
@@ -690,7 +706,7 @@ public class DTAPlot {
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
                 for (int i = 0; i < r.length(); i++) {
-                    trace.addPoint(i * 0.1, r.speed(i));
+                    trace.addPoint(i * 0.1, r.speedNative(i));
                 }
             }
         } else {
@@ -794,6 +810,7 @@ public class DTAPlot {
                 trace = new Trace(r.name() + " MAP");
                 trace.setColor(getNextColor());
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                
                 for (int i = 0; i < r.length(); i++) {
                     trace.addPoint(i * 0.1, r.map(i));
                 }
@@ -810,6 +827,110 @@ public class DTAPlot {
         }
     }
     
+    private synchronized void steerTrace(RunManager.Run r, boolean on) {
+        
+        String axisName="Steering Angle (+ve Right, -ve Left)";
+        String traceName=r.name() + " Steering Angle";
+        ITrace2D trace = findTrace(traceName);
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis(axisName);
+                trace = new Trace(traceName);
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                
+                double[] avg=new double[5];
+                int at=0;
+                for (int i = 0; i < r.length(); i++) {
+                    avg[at]=r.degrees(i);
+                    at=(at+1)%5;
+                    
+                    trace.addPoint(i * 0.1, (avg[0]+avg[1]+avg[2]+avg[3]+avg[4])/5);
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis(axisName);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains(axisName) == null) {
+                    cleanAxis(axisName);
+                }
+            }
+        }
+    }
+    
+    private synchronized void latAccelTrace(RunManager.Run r, boolean on) {
+        
+        String axisName="Lat. Accel. (+ve Right, -ve Left)";
+        String traceName=r.name() + " Lat. Accel.";
+        ITrace2D trace = findTrace(traceName);
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis(axisName);
+                trace = new Trace(traceName);
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                
+                double[] avg=new double[5];
+                int at=0;
+                for (int i = 0; i < r.length(); i++) {
+                    avg[at]=r.latAccel(i);
+                    at=(at+1)%5;
+                    
+                    trace.addPoint(i * 0.1, (avg[0]+avg[1]+avg[2]+avg[3]+avg[4])/5);
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis(axisName);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains(axisName) == null) {
+                    cleanAxis(axisName);
+                }
+            }
+        }
+    }
+    
+    private synchronized void longAccelTrace(RunManager.Run r, boolean on) {
+        
+        String axisName="Long. Accel. (g)";
+        String traceName=r.name() + " Long. Accel.";
+        ITrace2D trace = findTrace(traceName);
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis(axisName);
+                trace = new Trace(traceName);
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                
+                double[] avg=new double[5];
+                int at=0;
+                for (int i = 0; i < r.length(); i++) {
+                    avg[at]=r.speedKPH(i);
+                    
+                    double a=avg[at]-avg[(at+1)%5];
+                    a=a*1000/3600;
+                    a=a/0.5;
+                    a=a/9.8;
+                    trace.addPoint(i * 0.1, a);
+                    at=(at+1)%5;
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis(axisName);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains(axisName) == null) {
+                    cleanAxis(axisName);
+                }
+            }
+        }
+    }
+   
+        
     private synchronized void rpmTrace(RunManager.Run r, boolean on) {
         
         ITrace2D trace = findTrace(r.name() + " RPM");
@@ -859,35 +980,6 @@ public class DTAPlot {
         }
     }
 
-    private synchronized void waterTrace(RunManager.Run r, boolean on) {
-        
-        String suffix=" (\u00B0F)";
-        if (r.isDegC())
-            suffix=" (\u00B0C)";
-
-        ITrace2D trace = findTrace(r.name() + " Water");
-        if (on) {
-            if (trace == null) {
-                IAxis axis = getAxis("Water"+suffix);
-                trace = new Trace(r.name() + " Water");
-                trace.setColor(getNextColor());
-                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
-                for (int i = 0; i < r.length(); i++) {
-                    trace.addPoint(i * 0.1, r.water(i));
-                }
-            }
-        } else {
-            if (trace != null) {
-                IAxis axis = getAxis("Water"+suffix);
-                axis.removeTrace(trace);
-                _chart.removeTrace(trace);
-                if (findTraceContains("Water") == null) {
-                    cleanAxis("Water"+suffix);
-                }
-            }
-        }
-    }
-
     private synchronized void lambdaTrace(RunManager.Run r, boolean on) {
         
         String name="AFR";
@@ -914,65 +1006,7 @@ public class DTAPlot {
             }
         }
     }
-
-    private synchronized void airTrace(RunManager.Run r, boolean on) {
-        
-        String suffix=" (\u00B0F)";
-        if (r.isDegC())
-            suffix=" (\u00B0C)";
-
-        ITrace2D trace = findTrace(r.name() + " Air Temp");
-        if (on) {
-            if (trace == null) {
-                IAxis axis = getAxis("Air Temp"+suffix);
-                trace = new Trace(r.name() + " Air Temp");
-                trace.setColor(getNextColor());
-                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
-                for (int i = 0; i < r.length(); i++) {
-                    trace.addPoint(i * 0.1, r.airT(i));
-                }
-            }
-        } else {
-            if (trace != null) {
-                IAxis axis = getAxis("Air Temp"+suffix);
-                axis.removeTrace(trace);
-                _chart.removeTrace(trace);
-                if (findTraceContains("Air Temp") == null) {
-                    cleanAxis("Air Temp"+suffix);
-                }
-            }
-        }
-    }
-
-    private synchronized void oilTTrace(RunManager.Run r, boolean on) {
-        
-        String suffix=" (\u00B0F)";
-        if (r.isDegC())
-            suffix=" (\u00B0C)";
-
-        ITrace2D trace = findTrace(r.name() + " Oil Temp");
-        if (on) {
-            if (trace == null) {
-                IAxis axis = getAxis("Oil Temp"+suffix);
-                trace = new Trace(r.name() + " Oil Temp");
-                trace.setColor(getNextColor());
-                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
-                for (int i = 0; i < r.length(); i++) {
-                    trace.addPoint(i * 0.1, r.oilT(i));
-                }
-            }
-        } else {
-            if (trace != null) {
-                IAxis axis = getAxis("Oil Temp"+suffix);
-                axis.removeTrace(trace);
-                _chart.removeTrace(trace);
-                if (findTraceContains("Oil Temp") == null) {
-                    cleanAxis("Oil Temp"+suffix);
-                }
-            }
-        }
-    }
-
+    
     private synchronized void wheelSlipTrace(RunManager.Run r, boolean on) {
 
         ITrace2D trace = findTrace(r.name() + " Slip");
@@ -984,11 +1018,11 @@ public class DTAPlot {
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
                 for (int i = 0; i < r.length(); i++) {
                     double slip = r.wheelSlip(i);
-                    if (slip < -25) {
-                        slip = -25;
+                    if (slip < -100) {
+                        slip = -100;
                     }
-                    if (slip > 25) {
-                        slip = 25;
+                    if (slip > 100) {
+                        slip = 100;
                     }
                     trace.addPoint(i * 0.1, slip);
                 }
@@ -1001,5 +1035,83 @@ public class DTAPlot {
                 }
             }
         }
+    }
+    
+    
+    private synchronized void tempsTrace(RunManager.Run r, boolean on) {
+        
+        String suffix=" (\u00B0F)";
+        if (r.isDegC())
+            suffix=" (\u00B0C)";
+        
+        ITrace2D trace=null;
+
+        trace = findTrace(r.name() + " Water");
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                trace = new Trace(r.name() + " Water");
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                for (int i = 0; i < r.length(); i++) {
+                    trace.addPoint(i * 0.1, r.water(i));
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains("Water") == null) {
+                    cleanAxis("Temp"+suffix);
+                }
+            }
+        }
+        
+        trace = findTrace(r.name() + " Air Temp");
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                trace = new Trace(r.name() + " Air Temp");
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                for (int i = 0; i < r.length(); i++) {
+                    trace.addPoint(i * 0.1, r.airT(i));
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains("Air Temp") == null) {
+                    cleanAxis("Temp"+suffix);
+                }
+            }
+        }
+        
+        trace = findTrace(r.name() + " Oil Temp");
+        if (on) {
+            if (trace == null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                trace = new Trace(r.name() + " Oil Temp");
+                trace.setColor(getNextColor());
+                _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
+                for (int i = 0; i < r.length(); i++) {
+                    trace.addPoint(i * 0.1, r.oilT(i));
+                }
+            }
+        } else {
+            if (trace != null) {
+                IAxis axis = getAxis("Temp"+suffix);
+                axis.removeTrace(trace);
+                _chart.removeTrace(trace);
+                if (findTraceContains("Oil Temp") == null) {
+                    cleanAxis("Temp"+suffix);
+                }
+            }
+        }
+        
+        
     }
 }
