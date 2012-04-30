@@ -13,30 +13,133 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
+
 package uk.co.kevinjjones;
 
 import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
+import uk.co.kevinjjones.model.BasicError;
+import uk.co.kevinjjones.model.Pair;
+import uk.co.kevinjjones.model.ROStream;
+import uk.co.kevinjjones.model.WithError;
+import uk.co.kevinjjones.vehicle.SpeedStream;
 
 public class RunManager {
+    
+    public class RunStream implements ROStream {
+        private ROStream _stream;
+        private int _start;
+        private int _size;
+        private boolean _rebase;
+        private double _base;
+        private ArrayList<Pair<String,String>> _meta=new ArrayList();
+        
+        public RunStream(ROStream stream, int start,int size) {
+            _stream=stream;
+            _start=start;
+            _size=size;
+            _rebase=stream.getMeta("rebase").equals("true");
+        }
+        
+        @Override
+        public String name() {
+            return _stream.name();
+        }   
+    
+        @Override
+        public String description() {
+            return _stream.description();
+        }
+        
+        @Override
+        public String axis() {
+            return _stream.axis();
+        }
+        
+        @Override
+        public String units() {
+            return _stream.units();
+        }
+    
+        @Override
+        public int size() {
+            return _size;
+        }
+    
+        @Override
+        public String getString(int position) {
+            assert(position<_size);
+            return _stream.getString(_start+position);
+        }
+    
+        @Override
+        public long getTick(int position) throws ParseException {
+            assert(position<_size);
+            return _stream.getTick(_start+position);
+            
+        }
+    
+        @Override
+        public double getNumeric(int position) throws NumberFormatException {
+            assert(position<_size);
+            if (_rebase) {
+                _base=_stream.getNumeric(_start+0);
+                _rebase=false;
+            }
+            return _stream.getNumeric(_start+position)-_base;
+        }
+    
+        @Override
+        public String[] getStringSet() {       
+            return _stream.getStringSet();
+        }
+        
+        @Override
+        public Double[] toArray() throws NumberFormatException {
+            return _stream.toArray();
+        }
+
+        @Override
+        public void setMeta(String id, String value) {
+            _meta.add(new Pair(id,value));
+        }
+
+        @Override
+        public String getMeta(String id) {
+            int i=0;
+            while (i<_meta.size()) {
+                if (_meta.get(i).first().equals(id))
+                    return _meta.get(i).second();
+            }
+            return "";
+        }
+    }
 
     public class Run {
 
-        private int _id;
+        private String _prefix;
         private Log _log;
         private int _start;
         private int _end;
+        private boolean _isSplit;
+        
         private double[] _distance;
         private double[] _timeSlip;
+        private double[] _lambdaData;
+        
 
-        public Run(int id, Log log, int start, int end) {
-            _id = id;
+        public Run(String prefix, Log log, int start, int end, boolean isSplit) {
+            _prefix = prefix;
             _log = log;
             _start = start;
             _end = end;
+            _isSplit = isSplit;
         }
 
         public Log log() {
@@ -44,14 +147,43 @@ public class RunManager {
         }
 
         public String name() {
-            return "Run " + _id + " " + _log.name();
+            if (_prefix.isEmpty())
+                return _log.name();
+            else
+                return _prefix + " " + _log.name();                
         }
 
         public int length() {
             return _end - _start;
         }
+        
+        public boolean isSplit() {
+            return _isSplit;
+        }
+        
+        public int streamCount() {
+            return _log.streamCount();
+        }
+    
+        public boolean hasStream(String name) {
+            return _log.hasStream(name);
+        }
+        
+        public ROStream getStream(String name) {
+            if (!_log.hasStream(name))
+                return null;
+            return new RunStream(_log.getStream(name),_start,_end-_start);
+        }
 
-        public void recalc(double[] maxDistance) {
+        public ROStream getStream(int index) {
+            if (index<0 || index >= _log.streamCount())
+                return null;
+            return new RunStream(_log.getStream(index),_start,_end-_start);
+        }
+        
+/*        
+ * 
+         public void recalc(double[] maxDistance) {
             _timeSlip = new double[length()];
             for (int i = 0; i < length() && i < maxDistance.length; i++) {
                 assert (distance(i) <= maxDistance[i]);
@@ -64,64 +196,54 @@ public class RunManager {
                 _timeSlip[i] = t - i;
             }
         }
-
+* 
         public double speedNative(int i) {
             return _log.speed(_start + i);
         }
-        
-        public double speedKPH(int i) {
-            if (isKPH())
-                return speedNative(i);
-            else
-                return 1.609344*speedNative(i);
-        }
 
-        public double distance(int i) {
-            if (_distance == null) {
-                _distance = new double[length()];
-                double sum = 0;
-                for (int k = 0; k < length(); k++) {
-                    sum += _log.distance(_start + k);
-                    _distance[k] = sum;
-                }
+        public double speedKPH(int i) {
+            if (isKPH()) {
+                return speedNative(i);
+            } else {
+                return 1.609344 * speedNative(i);
             }
-            return _distance[i];
         }
 
         public double degrees(int i) {
-            
+
             if (_log.hasLeftSpeed() && _log.hasRightSpeed()) {
-                
-                double ls=_log.leftSpeed(_start+i);
-                double rs=_log.rightSpeed(_start+i);
-                
-                Car c=Car.getInstance();
-                boolean rightTurn=(ls>rs);
-                if (rightTurn)
-                    return c.getDegrees(ls,rs);
-                else
-                    return -c.getDegrees(rs,ls);
+
+                double ls = _log.leftSpeed(_start + i);
+                double rs = _log.rightSpeed(_start + i);
+
+                Car c = Car.getInstance();
+                boolean rightTurn = (ls > rs);
+                if (rightTurn) {
+                    return c.getDegrees(ls, rs);
+                } else {
+                    return -c.getDegrees(rs, ls);
+                }
             }
             return 0;
         }
-        
+
         public double latAccel(int i) {
-            
+
             if (_log.hasLeftSpeed() && _log.hasRightSpeed()) {
-                
-                double ls=_log.leftSpeed(_start+i);
-                double rs=_log.rightSpeed(_start+i);
-                
-                Car c=Car.getInstance();
-                boolean rightTurn=(ls>rs);
-                if (rightTurn)
-                    return c.getLatAccel(ls,rs);
-                else
-                    return -c.getLatAccel(rs,ls);
+
+                double ls = _log.leftSpeed(_start + i);
+                double rs = _log.rightSpeed(_start + i);
+
+                Car c = Car.getInstance();
+                boolean rightTurn = (ls > rs);
+                if (rightTurn) {
+                    return c.getLatAccel(ls, rs);
+                } else {
+                    return -c.getLatAccel(rs, ls);
+                }
             }
             return 0;
         }
-        
 
         public double timeSlip(int i) {
             return _timeSlip[i] / 10;
@@ -147,8 +269,70 @@ public class RunManager {
             return _log.boost(_start + i);
         }
 
-        public double lambda(int i) {
-            return _log.lambda(_start + i);
+        public double lambda(int index) {
+            if (_lambdaData == null) {
+
+                // Populate with shift
+                _lambdaData = new double[length()];
+                for (int j = 0; j < _lambdaData.length; j++) {
+                    int idx = (j + lambdaDelay()) % (_end - _start);
+                    _lambdaData[j] = _log.lambda(_start + idx);
+                }
+
+                // Exclude 'bad' section where MAP<80 || map is falling
+                // by 3% over 0.5 seconds.
+                for (int i = 0; i < _lambdaData.length; i++) {
+
+                    // Scan for a switch to bad
+                    int r = i;
+                    int startBad = 0;
+                    while (r + 1 < _lambdaData.length) {
+                        double m = map(r);
+                        if (m < 80) {
+                            startBad = r;
+                            break;
+                        }
+                        double d = (map(r + 1) - m) / m;
+                        if (d < -0.01) {
+                            startBad = r;
+                            break;
+                        }
+                        r++;
+                    }
+
+                    if (startBad != 0) {
+                        double m = map(startBad);
+                        if (m < 80) {
+                            while (m < 80 && startBad<_lambdaData.length) {
+                                _lambdaData[startBad] = 0;
+                                startBad++;
+                                m = map(startBad);
+                            }
+                            i=startBad;
+                        } else {
+                            // Test for sufficient fall
+                            double low = 0.97 * map(startBad);
+                            for (int k = startBad; k < startBad + 5 && k<_lambdaData.length; k++) {
+                                if (map(k) < low) {
+                                    // Walk until map increases again
+                                    while (map(k + 1) < map(k)) {
+                                        k++;
+                                    }
+
+                                    // Got one, so zero out
+                                    for (int p = startBad - 1; p <= k+1; p++) {
+                                        _lambdaData[p] = 0;
+                                    }
+                                    i = k;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return _lambdaData[index];
         }
 
         public double water(int i) {
@@ -186,10 +370,14 @@ public class RunManager {
         public boolean isLambda() {
             return _log.isLambda();
         }
+        * 
+        */
     }
+    
     private static RunManager _instance = null;
     private List<Log> _logs = new LinkedList<Log>();
     private List<Run> _runs = new LinkedList<Run>();
+    private boolean _autoSplit = false;
     private boolean _degC = true;
     private boolean _KPA = true;
     private boolean _KPH = true;
@@ -198,10 +386,11 @@ public class RunManager {
     protected RunManager() {
         // Load preferences
         Preferences prefs = Preferences.userNodeForPackage(RunManager.class);
-        _degC=prefs.getBoolean("DegreesC", true);
-        _KPA=prefs.getBoolean("KPA", true);
-        _KPH=prefs.getBoolean("KPH", true);
-        _lambda=prefs.getBoolean("Lambda", true);
+        _degC = prefs.getBoolean("DegreesC", true);
+        _KPA = prefs.getBoolean("KPA", true);
+        _KPH = prefs.getBoolean("KPH", true);
+        _lambda = prefs.getBoolean("Lambda", true);
+        _autoSplit = prefs.getBoolean("AutoSplit", false);
     }
 
     // Singleton access
@@ -212,32 +401,13 @@ public class RunManager {
         return _instance;
     }
 
-    public void addLogfile(File file) throws RTException {
+    public void addLogfile(File file,WithError<Boolean,BasicError> ok) throws RTException, IOException {
 
         // Parse logile and load runs from it
-        Log l = new Log(file, _degC, _KPA, _KPH, _lambda);
-        _logs.add(l);
-        addRuns(l);
-
-        // Calc max distance travelled at each time slot
-        double[] maxDistance = new double[0];
-        for (Run r : _runs) {
-            if (maxDistance.length < r.length()) {
-                double[] d = new double[r.length()];
-                System.arraycopy(maxDistance, 0, d, 0, maxDistance.length);
-                maxDistance = d;
-            }
-
-            for (int i = 0; i < r.length(); i++) {
-                if (r.distance(i) > maxDistance[i]) {
-                    maxDistance[i] = r.distance(i);
-                }
-            }
-        }
-
-        // Recalc runs for time slip using max Distance
-        for (Run r : _runs) {
-            r.recalc(maxDistance);
+        Log l = new Log(file,ok);
+        if (ok.value()) {
+            _logs.add(l);
+            addSessions(l, ok);
         }
     }
 
@@ -249,24 +419,62 @@ public class RunManager {
         return _runs.toArray(new Run[0]);
     }
 
-    private void addRuns(Log l) {
-
-        // Look for runs
+    private void addSessions(Log l, WithError<Boolean,BasicError> ok) {
+        
+        // Now look for multiple sessions
+        ROStream sess=l.getStream(Log.SESSION_STREAM);
+        String c=sess.getString(0);
+        int begin=1;
+        int end=1;
+        int s=1;
+        int runs=0;
+        for (; end<sess.size(); end++) {
+            if (!sess.getString(end).equals(c)) {
+                runs+=addRuns(l,s++,begin,end-1-begin);
+                begin=end;
+                c=sess.getString(begin);
+            }
+        }
+        runs+=addRuns(l,s++,begin,end-1-begin);
+        if (isAutoSplit() && runs==0)
+            ok.addError(new BasicError(BasicError.WARN,"No runs detected, try "
+                    +"loading file with auto spliting turned off"));
+        else if (isAutoSplit())
+            ok.addError(new BasicError(BasicError.INFO,"Loaded "+(s-1)+ 
+                    " sessions from "+l.name() + ", containing " + runs  
+                    + " runs."));
+        else
+            ok.addError(new BasicError(BasicError.INFO,"Loaded "+(s-1)+ 
+                    " sessions from "+l.name() + "."));
+    }
+        
+    private int addRuns(Log l, int session, int begin, int size) {
+        
+        // Should we also split?
+        int endSession = begin + size;
         int id = 1;
-        int at = 1;
-        while (true) {
-            int start = findStartPoint(at, l);
-            if (start == -1) {
-                break;
-            }
-            int end = findEndPoint(start, l);
-            if (end == -1) {
-                break;
-            }
+        ROStream speed=l.getStream(SpeedStream.NAME);
+        if (speed!=null && isAutoSplit()) {
+            
+            // Look for runs
+            int at = begin;
+            while (true) {
+                int start = findStartPoint(speed, at, endSession);
+                if (start == -1) {
+                    break;
+                }
+                int end = findEndPoint(speed, start, endSession);
+                if (end == -1) {
+                    break;
+                }
 
-            Run r = new Run(id++, l, start, end);
-            _runs.add(r);
-            at = end;
+                _runs.add(new Run("S"+session+"#"+ id++, l, start, end, true));
+                at = end;
+            }
+            return id-1;
+        } else {
+            _runs.add(new Run("S"+session, l, begin, begin+size, false));
+            return 1;
         }
     }
 
@@ -279,31 +487,31 @@ public class RunManager {
      * @param index
      * @return 
      */
-    private static int findStartPoint(int start, Log l) {
+    private static int findStartPoint(ROStream speed, int start, int endSession) {
 
-        // Loop speed until >100kph
+        // Loop speed until >60kph
         int r = start;
-        for (; r < l.length(); r++) {
-            if (l.speed(r) > 100) {
+        for (; r < endSession; r++) {
+            if (speed.getNumeric(r) > 60) {
                 break;
             }
         }
         // Didn't find 
-        if (r == l.length()) {
+        if (r == endSession) {
             return -1;
         }
 
         // Now loop back to locate the start at lowest speed <10kph
-        while (r > 0) {
-            double speed = l.speed(r);
-            double low = speed;
-            if (speed < 10) {
+        while (r > start) {
+            double s = speed.getNumeric(r);
+            double low = s;
+            if (s < 10) {
                 // In right area, find first lowest
                 int t = r - 1;
                 while (t > 0) {
-                    double s = l.speed(t);
-                    if (s < low) {
-                        low = s;
+                    double s2 = speed.getNumeric(t);
+                    if (s2 < low) {
+                        low = s2;
                         r = t;
                     } else {
                         return r;
@@ -318,41 +526,52 @@ public class RunManager {
         return -1;
     }
 
-    private static int findEndPoint(int start, Log l) {
+    private static int findEndPoint(ROStream speed,int start, int endSession) {
 
-        // Loop speed until >100kph
+        // Loop speed until >60kph
         int r = start;
-        for (; r < l.length(); r++) {
-            if (l.speed(r) > 100) {
+        for (; r < endSession; r++) {
+            if (speed.getNumeric(r) > 60) {
                 break;
             }
         }
         // Didn't find 
-        if (r == l.length()) {
+        if (r == endSession) {
             return -1;
         }
 
-        // Continue loop until < 10km/h
-        for (; r < l.length(); r++) {
-            if (l.speed(r) < 10) {
+        // Continue loop until < 5km/h
+        for (; r < endSession; r++) {
+            if (speed.getNumeric(r) < 5) {
                 return r;
             }
         }
         return -1;
     }
-    
+
     private void flushPrefs() throws RTException {
         Preferences prefs = Preferences.userNodeForPackage(RunManager.class);
         prefs.putBoolean("DegreesC", _degC);
         prefs.putBoolean("KPA", _KPA);
         prefs.putBoolean("KPH", _KPH);
         prefs.putBoolean("Lambda", _lambda);
+        prefs.putBoolean("AutoSplit", _autoSplit);
         try {
             prefs.flush();
         } catch (BackingStoreException ex) {
-            throw new RTException("Failed to save user preferences",ex);
+            throw new RTException("Failed to save user preferences", ex);
         }
     }
+    
+    public boolean isAutoSplit() {
+        return _autoSplit;
+    }
+
+    public void setAutoSplit(boolean isAutoSplit) throws RTException {
+        _autoSplit = isAutoSplit;
+        flushPrefs();
+    }
+    
 
     public boolean isDegC() {
         return _degC;
@@ -388,5 +607,9 @@ public class RunManager {
     public void setLambda(boolean isLambda) throws RTException {
         _lambda = isLambda;
         flushPrefs();
+    }
+
+    public int lambdaDelay() {
+        return 2;
     }
 }

@@ -15,15 +15,8 @@
  */
 package uk.co.kevinjjones;
 
-import java.io.IOException;
-import java.io.PrintStream;
-import java.io.StringReader;
-
 import au.com.bytecode.opencsv.CSVReader;
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
+import java.io.*;
 
 public class Logfile {
 

@@ -1,58 +1,125 @@
 /**
- Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
 
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
- http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
  */
 package uk.co.kevinjjones;
 
 import au.com.bytecode.opencsv.CSVReader;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import uk.co.kevinjjones.model.*;
+import uk.co.kevinjjones.vehicle.*;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-public class Log {
+public class Log extends View {
 
     private String _name;
-    private Object[] _rows = null;
-    private double[] _leftSpeed = null;
-    private double[] _rightSpeed = null;
-    private double[] _distance = null;
-    private int _leftSpeedCol;
-    private int _rightSpeedCol;
-    private int _rpmCol;
-    private int _tpsCol;
-    private int _mapCol;
-    private int _lambdaCol;
-    private int _waterCol;
-    private int _airTCol;
-    private int _oilTCol;
-    private int _oilPCol;
-    private int _slipCol;
-    private int _turboCol;
-    private int _boostCol;
-    private boolean _degC = true;
-    private boolean _KPA = true;
-    private boolean _KPH = true;
-    private boolean _lambda = true;
-    private boolean _hasRightSpeed = false;
 
+    public final static String SESSION_STREAM="SESSION";
+    public final static String TIME_STREAM="TIME";
+    public final static String RPM_STREAM="RPM";
+    public final static String THROT_STREAM="THROT";
+    public final static String WATER_STREAM="WATER";
+    public final static String AIR_STREAM="AIR";
+    public final static String MAP_STREAM="MAP";
+    public final static String LAMB_STREAM="LAMB";
+    public final static String LUSP_STREAM="L U SP";
+    public final static String RUSP_STREAM="R U SP";
+    public final static String LDSP_STREAM="L D SP";
+    public final static String RDSP_STREAM="R D SP";
+    public final static String TURB_STREAM="TURB %";
+    public final static String OILT_STREAM="OIL T";
+    public final static String VOLTS_STREAM="VOLTS";
+    public final static String SLIP_STREAM="SLIP%";
+    public final static String ADV_STREAM="ADV";
+    public final static String LAUCS_STREAM="LAUC S";
+    public final static String SHIFS_STREAM="SHIF S";
+    public final static String SHIFA_STREAM="SHIF A";
+    public final static String INJ_STREAM="INJ %";
+    public final static String A1VAL_STREAM="A1 VAL";
+    public final static String A2VAL_STREAM="A2 VAL";
+
+    static class RawTraceData {
+        public String _units;
+        public String _desc;
+        public String _axis;
+        
+        public RawTraceData(String units, String desc, String axis ) {
+            assert(desc!=null && axis !=null);
+            _units=units;
+            _desc=desc;
+            _axis=axis;
+        }
+    }
+    
+    static class VirtualTraceData {
+        public boolean _rebase;
+        public Class _streamClass;
+        public Object _arg;
+        
+        public VirtualTraceData(boolean rebase, Class streamClass) {
+            assert(streamClass!=null);
+            _rebase=rebase;
+            _streamClass=streamClass;
+        }
+        
+        public VirtualTraceData(boolean rebase, Class streamClass, Object arg) {
+            assert(streamClass!=null);
+            _rebase=rebase;
+            _streamClass=streamClass;
+            _arg=arg;
+        }
+    }
+    
+    private final static Map<String,RawTraceData> _rawTraceData=new HashMap();
+    private final static ArrayList<VirtualTraceData> _virtualTraceData=new ArrayList();
+    
+    static {
+        _rawTraceData.put(THROT_STREAM, new RawTraceData("%", "Throttle Position", "Throttle"));
+        _rawTraceData.put(MAP_STREAM, new RawTraceData(null, "MAP", "Pressure"));
+        _rawTraceData.put(RPM_STREAM, new RawTraceData("", "RPM", "RPM"));
+        _rawTraceData.put(TURB_STREAM, new RawTraceData("%", "Turbo", "Turbo"));
+        _rawTraceData.put(LAMB_STREAM, new RawTraceData("", "AFR", "AFR"));
+        _rawTraceData.put(SLIP_STREAM, new RawTraceData("%", "Wheel Slip", "Slip"));
+        _rawTraceData.put(WATER_STREAM, new RawTraceData("\u00B0C", "Water Temp", "Temperature"));
+        _rawTraceData.put(OILT_STREAM, new RawTraceData("\u00B0C", "Oil Temp", "Temperature"));
+        _rawTraceData.put(AIR_STREAM, new RawTraceData("\u00B0C", "Air Temp", "Temperature"));
+        _rawTraceData.put(LUSP_STREAM, new RawTraceData(null, "Left Undriven Speed", "Speed"));
+        _rawTraceData.put(RUSP_STREAM, new RawTraceData(null, "Right Undriven Speed", "Speed"));
+        _rawTraceData.put(LDSP_STREAM, new RawTraceData(null, "Left Driven Speed", "Speed"));
+        _rawTraceData.put(RDSP_STREAM, new RawTraceData(null, "Right Driven Speed", "Speed"));
+
+        _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(0)));
+        _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(1)));
+        _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(2)));
+        _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(3)));
+        _virtualTraceData.add(new VirtualTraceData(false, SpeedStream.class));
+        _virtualTraceData.add(new VirtualTraceData(false, LowThrottle.class));
+        _virtualTraceData.add(new VirtualTraceData(true, Distance.class));
+        _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(1)));
+        _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(2)));
+    }
+    
+    // For rendering descriptions on the GUI
+    public static String getStreamDescription(String name) {
+        RawTraceData rtd=_rawTraceData.get(name);
+        if (rtd!=null && rtd._desc!=null)
+            return rtd._desc;
+        return name;
+    }
+    
     static byte[] readFile(FileInputStream fis) throws Exception {
         InputStream in = null;
         byte[] out = new byte[0];
@@ -63,8 +130,8 @@ public class Log {
             // the length of a buffer can vary
             int bufLen = 20000 * 1024;
             byte[] buf = new byte[bufLen];
-            byte[] tmp = null;
-            int len = 0;
+            byte[] tmp;
+            int len;
             while ((len = in.read(buf, 0, bufLen)) > 0) {
                 // extend array
                 tmp = new byte[out.length + len];
@@ -74,7 +141,6 @@ public class Log {
                 System.arraycopy(buf, 0, tmp, out.length, len);
 
                 out = tmp;
-                tmp = null;
             }
 
         } finally {
@@ -100,360 +166,119 @@ public class Log {
         }
     }
 
-    public Log(File f, boolean degC, boolean KPA, boolean KPH, boolean lambda) throws LogException {
-        _degC=degC;
-        _KPA=KPA;
-        _KPH=KPH;
-        _lambda=lambda;
-        loadLogfile(f);
-    }
-
-    public final void loadLogfile(File f) throws LogException {
+    public Log(File f, WithError<Boolean,BasicError> ok) throws IOException {
 
         // Check its readable
         if (!f.canRead()) {
-            throw new LogException("The logfile " + f.getAbsolutePath() 
-                    + " can not be read.");
+            ok.addError(new BasicError("The data in the logfile " + 
+                    f.getAbsolutePath()
+                    + " can not be read, it may be protected against access."));
+            ok.setValue(Boolean.FALSE);
+            return;
         }
 
         // Now read the data stream
         FileInputStream fis;
-        byte[] data = null;
+        byte[] data;
         try {
             fis = new FileInputStream(f);
             data = readFile(fis);
         } catch (Exception e) {
-            throw new LogException("An error occured reading the logfile " 
-                    + f.getAbsolutePath(), e);
+            ok.addError(new BasicError("A file reading error occured reading the file "
+                    + f.getAbsolutePath(),e));
+            ok.setValue(Boolean.FALSE);
+            return;
         }
-        _name=f.getName();
+        _name = f.getName();
 
         CSVReader parser = new CSVReader(new StringReader(new String(data)), ';');
-        try {
-            // Grab all the data in one go
-            _rows = parser.readAll().toArray();
-        } catch (IOException e) {
-            throw new LogException("Problem loading data in logfile " + 
-                    f.getAbsolutePath(), e);
+        
+        // First read the headers and create Streams in view
+        String[] headers;
+        headers = parser.readNext();
+        if (headers.length==0) {
+            ok.addError(new BasicError("The logfile "+f.getAbsolutePath()+
+            " does not appear to have any header(s), it might be empty or not a DTA logfile."));
+            ok.setValue(Boolean.FALSE);
+            return;
         }
-
-        // Now locate columns
-        _leftSpeedCol=-1;
-        _rightSpeedCol=-1;
-        _rpmCol=-1;
-        _tpsCol=-1;
-        _mapCol=-1;
-        _lambdaCol=-1;
-        _waterCol=-1;
-        _airTCol=-1;
-        _oilTCol=-1;
-        _oilPCol=-1;
-        _slipCol=-1;
-        _turboCol=-1;
-        _boostCol=-1;
-
-        String[] nextLine = (String[]) _rows[0];
-        if (nextLine != null) {
-            int NUMindex = nextLine.length;
-            for (int i = 0; i < NUMindex; i++) {
-                if (nextLine[i].equals("L U SP")) {
-                    _leftSpeedCol = i;
-                }
-                else if (nextLine[i].equals("R U SP")) {
-                    _rightSpeedCol = i;
-                }
-                else if (nextLine[i].equals("RPM")) {
-                    _rpmCol = i;
-                }
-                else if (nextLine[i].equals("THROT")) {
-                    _tpsCol = i;
-                }
-                else if (nextLine[i].equals("MAP")) {
-                    _mapCol = i;
-                }
-                else if (nextLine[i].equals("LAMB")) {
-                    _lambdaCol = i;
-                }
-                else if (nextLine[i].equals("WATER")) {
-                    _waterCol = i;
-                }
-                else if (nextLine[i].equals("AIR")) {
-                    _airTCol = i;
-                }
-                else if (nextLine[i].equals("OIL T")) {
-                    _oilTCol = i;
-                }
-                else if (nextLine[i].equals("OIL P")) {
-                    _oilPCol = i;
-                }
-                else if (nextLine[i].equals("SLIP%")) {
-                    _slipCol = i;
-                }
-                else if (nextLine[i].equals("TURB %")) {
-                    _turboCol = i;
-                }
-                else if (nextLine[i].equals("A1 VAL")) {
-                    _boostCol = i;
-                }
+        
+        RWStream[] streams=new RWStream[headers.length-1];
+        for (int h=0; h<headers.length-1; h++) {
+            String name=headers[h].trim();
+            String desc=name;
+            String axis=name;
+            String units="unknown units";
+            RawTraceData td=_rawTraceData.get(name);
+            if (td!=null) {
+                desc=td._desc;
+                axis=td._axis;
+                units=td._units;
             }
+            streams[h]=createStream(name,desc,axis,units);
+        }
             
-            // Check we at least have speed
-            if (_leftSpeedCol == -1 && _rightSpeedCol==-1) {
-                throw new LogException("No speed column (L U SP or R U SP) found in "+
-                        f.getAbsolutePath()+", maybe this is not a logfile");
-            }
-        } else {
-            throw new LogException("Missing header row in "+
-                    f.getAbsolutePath()+", perhaps an empty file");
+        // Next line should be blank
+        String[] row=parser.readNext();
+        if (row.length!=1 || row[0].length()!=0) {
+            ok.addError(new BasicError("The logfile "+f.getAbsolutePath()+
+              " appears to have data on the second line, it should be empty"));
+            ok.setValue(Boolean.FALSE);
         }
         
-        // First two rows are now junk, and log needs reversing
-        List<Object> reverse = Arrays.asList(_rows);
-        Collections.reverse(reverse);
-        _rows=reverse.toArray();
-       
-        // Finally cache speed & calc distance column
-        if (_leftSpeedCol!=-1)
-            _leftSpeed = new double [_rows.length-2];
-        if (_rightSpeedCol!=-1)
-            _rightSpeed = new double [_rows.length-2];
-        _distance = new double [_rows.length-2];
+        // Now read each row into the streams
+        int line=3;
+        while (true) {
+            row=parser.readNext();
+            if (row==null)
+                break;
+            if (row.length-1!=streams.length) {
+                ok.addError(new BasicError("On line "+line+" of the logfile " + 
+                        f.getAbsolutePath() + " there are only "+row.length+
+                        " values, there should be "+streams.length+"."));
+                ok.setValue(Boolean.FALSE);                
+            } else {
+                for (int r=0;r<streams.length-1;r++) {
+                    streams[r].addData(row[r].trim());
+                }
+            }
+        }
         
-        for (int r=0; r<_rows.length-2;r++) {
-            String[] values=(String[])_rows[r];
-            if (_leftSpeedCol!=-1) {
-                _leftSpeed[r]=Double.parseDouble(values[_leftSpeedCol]);
+        // Reverse stream contents before we start mucking with them
+        for (RWStream s : streams) {
+            s.reverse();
+        }
+        
+        // Create the virtual streams
+        ArrayList<VStream> vs=new ArrayList();
+        for (VirtualTraceData td : _virtualTraceData) {
+            VStream s;
+            try {
+                s = (VStream)td._streamClass.newInstance();
+                
+                WithError<Boolean,BasicError> vok=new WithError<Boolean,BasicError>(true);
+                s.setView(this,td._arg,vok);
+                if (vok.value()) {
+                    addVirtualStream(s.name(),s);
+                    vs.add(s);
+                    if (td!=null && td._rebase)
+                        s.setMeta("rebase", "true");
+                }
+                ok.appendErrors(vok);
+            } catch (InstantiationException ex) {
+                ok.addError(new BasicError(ex));
+            } catch (IllegalAccessException ex) {
+                ok.addError(new BasicError(ex));
             }
-            if (_rightSpeedCol!=-1) {
-                _rightSpeed[r]=Double.parseDouble(values[_rightSpeedCol]);
-                if (_rightSpeed[r]>0)
-                    _hasRightSpeed=true;
-            }
-            _distance[r]=(speed(r)/3600)*0.1;
+        }
+        
+        // Finally validate the virtual streams
+        for (VStream v : vs) {
+            v.validate(ok);
         }
     }
-    
+
     public String name() {
         return _name;
     }
-    
-    public int length() {
-        return _rows.length-2;
-    }
-
-    public boolean hasSpeed() {
-        return _leftSpeedCol!=-1 || _rightSpeedCol!=-1;
-    }
-    
-    public boolean hasLeftSpeed() {
-        return _leftSpeedCol!=-1;
-    }
-    
-    public boolean hasRightSpeed() {
-        return _hasRightSpeed;
-    }
-    
-    public boolean hasSteer() {
-        return hasLeftSpeed() && hasRightSpeed();
-    }
-    
-    public boolean hasLatAccel() {
-        return hasSteer();
-    }
-    
-    public boolean hasLongAccel() {
-        return hasSpeed();
-    }
-    
-    public boolean hasRPM() {
-        return _rpmCol!=-1;
-    }
-    
-    public boolean hasDistance() {
-        return hasSpeed();
-    }
-    
-    public boolean hasTPS() {
-        return _tpsCol!=-1;
-    }
-
-    public boolean hasMAP() {
-        return _mapCol!=-1;
-    }
-    
-    public boolean hasLambda() {
-        return _lambdaCol!=-1;
-    }
-
-    public boolean hasWater() {
-        return _waterCol!=-1;
-    }
-
-    public boolean hasAirT() {
-        return _airTCol!=-1;
-    }
-
-    public boolean hasOilT() {
-        return _oilTCol!=-1;
-    }
-    
-    public boolean hasOilP() {
-        return _oilPCol!=-1;
-    }
-
-    public boolean hasSlip() {
-        return _slipCol!=-1;
-    }
-    
-    public boolean hasTurbo() {
-        return _turboCol!=-1;
-    }
-
-    public boolean hasBoost() {
-        return _boostCol!=-1;
-    }
-    
-    public double speed(int index) {
-        assert hasSpeed();
-        assert index>=0;
-        assert index<length();
-        
-        
-        if (_leftSpeedCol!=-1 && _rightSpeedCol!=-1 &&
-                _leftSpeed[index]>0 && _rightSpeed[index]>0)
-            return (_leftSpeed[index]+_rightSpeed[index])/2;
-        else if (_leftSpeedCol!=-1) 
-            return _leftSpeed[index];
-        else 
-            return _rightSpeed[index];
-    }
-    
-    public double leftSpeed(int index) {
-        assert hasLeftSpeed();
-        assert index>=0;
-        assert index<length();
-        
-        return _leftSpeed[index];
-    }
-    
-    public double rightSpeed(int index) {
-        assert hasRightSpeed();
-        assert index>=0;
-        assert index<length();
-        
-        return _rightSpeed[index];
-    }
-    
-    public double distance(int index) {
-        assert hasDistance();
-        assert index>=0;
-        assert index<length();
-        
-        return _distance[index];
-    }
-    
-    public double rpm(int index) {
-        assert hasTPS();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_rpmCol]);
-    }
-    
-    public double tps(int index) {
-        assert hasTPS();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_tpsCol]);
-    }
-    
-    public double map(int index) {
-        assert hasMAP();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_mapCol]);
-    }
-    
-    public double lambda(int index) {
-        assert hasLambda();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_lambdaCol]);
-    }
-    
-    public double water(int index) {
-        assert hasWater();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_waterCol]);
-    }
-    
-    public double airT(int index) {
-        assert hasAirT();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_airTCol]);
-    }
-    
-    public double oilT(int index) {
-        assert hasOilT();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_oilTCol]);
-    }
-    
-    public double oilP(int index) {
-        assert hasOilP();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_oilPCol]);
-    }
-    
-    public double slip(int index) {
-        assert hasSlip();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_slipCol]);
-    }
-    
-    public double turbo(int index) {
-        assert hasSlip();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_turboCol]);
-    }
-
-    public double boost(int index) {
-        assert hasSlip();
-        assert index>=0;
-        assert index<length();
-        
-        return Double.parseDouble(((String[])_rows[index])[_boostCol]);
-    }
-
-    public boolean isKPA() {
-        return _KPA;
-    }
-
-    public boolean isKPH() {
-        return _KPH;
-    }
-
-    public boolean isDegC() {
-        return _degC;
-    }
-
-    public boolean isLambda() {
-        return _lambda;
-    }
-    
 }
