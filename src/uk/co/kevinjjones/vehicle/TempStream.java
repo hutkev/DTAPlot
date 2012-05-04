@@ -22,70 +22,88 @@ import uk.co.kevinjjones.model.*;
  * A stream provides a time series data abstraction. It implements some
  * basic statistical operations to make examining the stream easy.
  */
-public class AFRStream extends StreamBase {
+public class TempStream extends StreamBase {
     
-    public final static int AFR=1;
-    public final static int LAMBDA=2;
+    public static int DEGC=1;
+    public static int DEGF=2;
     
-    public final static String AFR_NAME="AFR";
-    public final static String LAMBDA_NAME="LAMBDA";
+    private static int _isDegC=0;
+    
+    private static boolean isDegC(ROStream s) {
+        if (_isDegC!=0)
+            return _isDegC==DEGC;
         
-    public static String name(int index) {
-        switch (index) {
-            case AFR:
-                return AFR_NAME;
-            case LAMBDA:
-                return LAMBDA_NAME;
-        }
-        return null;
-    }
-    
-    private static int _isAFR=0;
-    
-    private static boolean isAFR(ROStream s) {
-        if (_isAFR!=0)
-            return _isAFR==AFR;
-        
-        DoubleSampler ds=new DoubleSampler(0.0,20.0,200);
+        DoubleSampler ds=new DoubleSampler(-100.0,500.0,12);
         Distribution<Double> d=new Distribution<Double>(ds);
         d.sample(s.toArray());
         
-        // If Lambda we should not see samples >2
-        int b=20;
-        for(; b<200; b++) {
+        // If DegC we should not see > 150
+        int b=5;
+        for(; b<12; b++) {
             if (d.samples(b)>0)
                 break;
         }
-        if (b>=200) {
-            _isAFR=LAMBDA;
+        if (b>=12) {
+            _isDegC=DEGC;
         } else {
-            _isAFR=AFR;
+            _isDegC=DEGF;
         }
         
-        return _isAFR==1;
+        return _isDegC==DEGC;
+    }
+    
+    public final static int WATER=1;
+    public final static int OIL=2;
+    public final static int AIR=3;
+    
+    public final static String WATER_NAME="Water Temp";
+    public final static String OIL_NAME="Oil Temp";
+    public final static String AIR_NAME="Air Temp";
+        
+    public static String name(int index) {
+        switch (index) {
+            case WATER:
+                return WATER_NAME;
+            case OIL:
+                return OIL_NAME;
+            case AIR:
+                return AIR_NAME;
+                
+        }
+        return null;
     }
     
     private View _view;
     private int _type=-1;
     private ROStream _stream;
-    private int _streamType;
     
-    public AFRStream() {
+    public TempStream() {
     }
     
     @Override
     public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
         _view=view;
         _type=((Integer)arg).intValue();
-        assert(_type>=1 && _type<=2);
+        assert(_type>=1 && _type<=3);
         
-        _stream=_view.getStream(Log.LAMB_STREAM);
+        switch (_type) {
+            case WATER:
+                _stream=_view.getStream(Log.WATER_STREAM);
+                break;
+            case OIL:
+                _stream=_view.getStream(Log.OILT_STREAM);
+                break;
+            case AIR:
+                _stream=_view.getStream(Log.AIR_STREAM);
+                break;
+        }
+        
         if (_stream==null) {
             ok.setValue(false);
         } else {
             _stream.setMeta("hide", "true");
-            _streamType=isAFR(_stream)?AFR:LAMBDA;
         }
+        isDegC(_stream);
     }
     
     @Override
@@ -100,12 +118,16 @@ public class AFRStream extends StreamBase {
     
     @Override    
     public String axis() {
-        return name(_type);
+        return "Temperature";
     }
 
     @Override
     public String units() {
-        return null; // Unknown
+        if (isDegC(_stream)) {
+            return "\u00B0C";
+        } else {
+            return "\u00B0F";
+        }
     }
     
     @Override
@@ -115,12 +137,7 @@ public class AFRStream extends StreamBase {
     
     @Override
     public double getNumeric(int position) throws NumberFormatException {
-        double v=_stream.getNumeric(position);
-        if (_type==AFR && _streamType!=AFR) {
-            return v*14.7;
-        } else if (_type==LAMBDA && _streamType!=LAMBDA) {
-            return v/14.7;
-        }
-        return v;
+        return _stream.getNumeric(position);
     }
+    
 }

@@ -41,103 +41,15 @@ public class OptionsDialog extends javax.swing.JPanel {
         buttonGroup2 = new javax.swing.ButtonGroup();
         buttonGroup3 = new javax.swing.ButtonGroup();
         buttonGroup4 = new javax.swing.ButtonGroup();
-        jPanel2 = new javax.swing.JPanel();
-        DegF = new javax.swing.JRadioButton();
-        this.DegF.setSelected(!RunManager.getInstance().isDegC());
-        DegC = new javax.swing.JRadioButton();
-        this.DegC.setSelected(RunManager.getInstance().isDegC());
-        jPanel1 = new javax.swing.JPanel();
-        KPA = new javax.swing.JRadioButton();
-        this.KPA.setSelected(RunManager.getInstance().isKPA());
-        PSI = new javax.swing.JRadioButton();
-        this.PSI.setSelected(!RunManager.getInstance().isKPA());
         jPanel3 = new javax.swing.JPanel();
         KPH = new javax.swing.JRadioButton();
-        this.KPH.setSelected(RunManager.getInstance().isKPH());
+        this.KPH.setSelected(RunManager.getInstance().getKPH()==1);
+        NotSet = new javax.swing.JRadioButton();
+        this.NotSet.setSelected(RunManager.getInstance().getKPH()==0);
         MPH = new javax.swing.JRadioButton();
-        this.MPH.setSelected(!RunManager.getInstance().isKPH());
-        jPanel4 = new javax.swing.JPanel();
-        Lambda = new javax.swing.JRadioButton();
-        this.Lambda.setSelected(RunManager.getInstance().isLambda());
-        AF = new javax.swing.JRadioButton();
-        this.AF.setSelected(!RunManager.getInstance().isLambda());
+        this.MPH.setSelected(RunManager.getInstance().getKPH()==2);
         jLabel1 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
         jButton1 = new javax.swing.JButton();
-        jLabel5 = new javax.swing.JLabel();
-
-        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Temperature"));
-        jPanel2.setForeground(new java.awt.Color(179, 68, 68));
-
-        buttonGroup1.add(DegF);
-        DegF.setText("Deg F");
-        DegF.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                DegFActionPerformed(evt);
-            }
-        });
-
-        buttonGroup1.add(DegC);
-        DegC.setText("Deg C");
-        DegC.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                DegCActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
-        jPanel2.setLayout(jPanel2Layout);
-        jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addComponent(DegC)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(DegF)
-                .addContainerGap(40, Short.MAX_VALUE))
-        );
-        jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(DegC)
-                .addComponent(DegF))
-        );
-
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Pressure"));
-        jPanel1.setPreferredSize(new java.awt.Dimension(199, 49));
-        jPanel1.setRequestFocusEnabled(false);
-
-        buttonGroup2.add(KPA);
-        KPA.setText("Bar/KPA");
-        KPA.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                KPAActionPerformed(evt);
-            }
-        });
-
-        buttonGroup2.add(PSI);
-        PSI.setText("PSI");
-        PSI.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                PSIActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(KPA)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(PSI)
-                .addContainerGap(41, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(KPA)
-                .addComponent(PSI))
-        );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder("Speed"));
         jPanel3.setPreferredSize(new java.awt.Dimension(199, 49));
@@ -148,6 +60,14 @@ public class OptionsDialog extends javax.swing.JPanel {
         KPH.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 KPHActionPerformed(evt);
+            }
+        });
+
+        buttonGroup3.add(NotSet);
+        NotSet.setText("Not Set");
+        NotSet.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                NotSetActionPerformed(evt);
             }
         });
 
@@ -165,66 +85,28 @@ public class OptionsDialog extends javax.swing.JPanel {
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addComponent(KPH)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(MPH)
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(NotSet)
+                .addGap(55, 55, 55))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                 .addComponent(KPH)
+                .addComponent(NotSet)
                 .addComponent(MPH))
         );
 
-        jPanel4.setBorder(javax.swing.BorderFactory.createTitledBorder("Lambda"));
-        jPanel4.setPreferredSize(new java.awt.Dimension(199, 49));
-        jPanel4.setRequestFocusEnabled(false);
+        jLabel1.setText("Please select units of speed used in logfile ");
 
-        buttonGroup4.add(Lambda);
-        Lambda.setText("Lambda");
-        Lambda.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                LambdaActionPerformed(evt);
-            }
-        });
-
-        buttonGroup4.add(AF);
-        AF.setText("A/F");
-        AF.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                AFActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
-        jPanel4.setLayout(jPanel4Layout);
-        jPanel4Layout.setHorizontalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createSequentialGroup()
-                .addComponent(Lambda)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(AF)
-                .addContainerGap(47, Short.MAX_VALUE))
-        );
-        jPanel4Layout.setVerticalGroup(
-            jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                .addComponent(Lambda)
-                .addComponent(AF))
-        );
-
-        jLabel1.setText("Set these options to");
-
-        jLabel3.setText("from File->System Units");
-
-        jButton1.setText("Done");
+        jButton1.setText("OK");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton1ActionPerformed(evt);
             }
         });
-
-        jLabel5.setText("match DTASWin settings");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -234,36 +116,21 @@ public class OptionsDialog extends javax.swing.JPanel {
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jButton1)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, 183, Short.MAX_VALUE)
-                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jLabel5)
-                        .addComponent(jLabel1)
-                        .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap())
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(8, 8, 8)))
+                .addContainerGap(20, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(20, 20, 20)
-                        .addComponent(jLabel5)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel3)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(10, 10, 10)
+                .addComponent(jLabel1)
+                .addGap(18, 18, 18)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jButton1)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -278,38 +145,6 @@ public class OptionsDialog extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_jButton1ActionPerformed
 
-    private void DegFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DegFActionPerformed
-        try {
-            RunManager.getInstance().setDegC(false);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_DegFActionPerformed
-
-    private void DegCActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DegCActionPerformed
-        try {
-            RunManager.getInstance().setDegC(true);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_DegCActionPerformed
-
-    private void KPAActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_KPAActionPerformed
-        try {
-            RunManager.getInstance().setKPA(true);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_KPAActionPerformed
-
-    private void PSIActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PSIActionPerformed
-        try {
-            RunManager.getInstance().setKPA(false);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_PSIActionPerformed
-
     private void KPHActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_KPHActionPerformed
         try {
             RunManager.getInstance().setKPH(true);
@@ -318,50 +153,33 @@ public class OptionsDialog extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_KPHActionPerformed
 
+    private void NotSetActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_NotSetActionPerformed
+        try {
+            RunManager.getInstance().unsetKPH();
+        } catch (RTException ex) {
+            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_NotSetActionPerformed
+
     private void MPHActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_MPHActionPerformed
         try {
             RunManager.getInstance().setKPH(false);
         } catch (RTException ex) {
             Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }//GEN-LAST:event_MPHActionPerformed
 
-    private void LambdaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LambdaActionPerformed
-        try {
-            RunManager.getInstance().setLambda(true);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_LambdaActionPerformed
-
-    private void AFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_AFActionPerformed
-        try {
-            RunManager.getInstance().setLambda(false);
-        } catch (RTException ex) {
-            Logger.getLogger(OptionsDialog.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_AFActionPerformed
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JRadioButton AF;
-    private javax.swing.JRadioButton DegC;
-    private javax.swing.JRadioButton DegF;
-    private javax.swing.JRadioButton KPA;
     private javax.swing.JRadioButton KPH;
-    private javax.swing.JRadioButton Lambda;
     private javax.swing.JRadioButton MPH;
-    private javax.swing.JRadioButton PSI;
+    private javax.swing.JRadioButton NotSet;
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.ButtonGroup buttonGroup2;
     private javax.swing.ButtonGroup buttonGroup3;
     private javax.swing.ButtonGroup buttonGroup4;
     private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
     // End of variables declaration//GEN-END:variables
 }

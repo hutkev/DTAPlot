@@ -26,19 +26,30 @@ import uk.co.kevinjjones.model.*;
 public abstract class StreamBase implements VStream {
     
     private View _view;
+    private ParamHandler _handler;
     private ArrayList<Pair<String,String>> _meta=new ArrayList();
+    private int _isKPH=3;
     
     public StreamBase() {
     }
     
     @Override
-    public void setView(View view, Object arg, WithError<Boolean,BasicError> ok) {
+    public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
         _view=view;
+        _handler=handler;
     }
     
-    @Override
-    public void validate(WithError<Boolean,BasicError> ok) {
-        
+    public int isKPH(boolean prompt) {
+        if (_isKPH==3) {
+            String v=_handler.getParameter("isKPH",prompt);
+            if (v==null)
+                _isKPH=0;
+            else if (v.equals("true"))
+                _isKPH=1;
+            else if (v.equals("false"))
+                _isKPH=2;
+        }
+        return _isKPH;
     }
     
     @Override

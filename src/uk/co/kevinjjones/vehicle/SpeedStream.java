@@ -16,10 +16,7 @@ limitations under the License.
 package uk.co.kevinjjones.vehicle;
 
 import uk.co.kevinjjones.Log;
-import uk.co.kevinjjones.model.BasicError;
-import uk.co.kevinjjones.model.ROStream;
-import uk.co.kevinjjones.model.View;
-import uk.co.kevinjjones.model.WithError;
+import uk.co.kevinjjones.model.*;
 
 /**
  * A stream provides a time series data abstraction. It implements some
@@ -40,7 +37,8 @@ public class SpeedStream extends StreamBase {
     }
     
     @Override
-    public void setView(View view, Object arg, WithError<Boolean,BasicError> ok) {
+    public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
+        super.setView(view, arg, handler, ok);
         _view=view;
         _lusp=_view.getStream(WheelStream.name(WheelStream.LUSP));
         _rusp=_view.getStream(WheelStream.name(WheelStream.RUSP));
@@ -85,7 +83,13 @@ public class SpeedStream extends StreamBase {
 
     @Override
     public String units() {
-        return null; // Unknown
+        switch (isKPH(false)) {
+            case 1:
+                return "kph";
+            case 2:
+                return "mph";
+        }
+        return null;
     }
     
     @Override
@@ -100,24 +104,25 @@ public class SpeedStream extends StreamBase {
             // With four wheel sensors we track min under accel
             // and max under braking, the switch over is made by looking
             // at tps
-            double lowt=_lowt.getNumeric(position);
             double avgDriven=(_ldsp.getNumeric(position)+_rdsp.getNumeric(position))/2;
             double avgUndriven=(_lusp.getNumeric(position)+_rusp.getNumeric(position))/2;
             
-            if (lowt==1) {
+            if (_lowt!=null && _lowt.getNumeric(position)==0) {
                 return Math.max(avgDriven,avgUndriven);
             } else {
                 return Math.min(avgDriven,avgUndriven);
             }
         }
         else if (_lusp!=null && _rusp!=null) {
-            return (_lusp.getNumeric(position)+_rusp.getNumeric(position))/2;
+            // With only 2 undriven go for max to remove lock ups
+            return Math.max(_lusp.getNumeric(position),_rusp.getNumeric(position));
         } else if (_lusp!=null) {
             return _lusp.getNumeric(position);
         } else if (_rusp!=null) {
             return _rusp.getNumeric(position);            
         } else if (_ldsp!=null && _rdsp!=null) {
-            return (_ldsp.getNumeric(position)+_rdsp.getNumeric(position))/2;
+            // With only 2 undriven go for min to remove spin
+            return Math.min(_ldsp.getNumeric(position),_rdsp.getNumeric(position));
         } else if (_ldsp!=null) {
             return _ldsp.getNumeric(position);
         } else if (_rdsp!=null) {

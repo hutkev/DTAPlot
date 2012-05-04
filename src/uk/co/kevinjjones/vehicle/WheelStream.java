@@ -16,10 +16,7 @@ limitations under the License.
 package uk.co.kevinjjones.vehicle;
 
 import uk.co.kevinjjones.Log;
-import uk.co.kevinjjones.model.BasicError;
-import uk.co.kevinjjones.model.ROStream;
-import uk.co.kevinjjones.model.View;
-import uk.co.kevinjjones.model.WithError;
+import uk.co.kevinjjones.model.*;
 
 /**
  * A stream provides a time series data abstraction. It implements some
@@ -47,7 +44,6 @@ public class WheelStream extends StreamBase {
     }
     
     private View _view;
-    private boolean _init=false;
     private int _wheel=-1;
     private ROStream _stream;
     
@@ -55,17 +51,37 @@ public class WheelStream extends StreamBase {
     }
     
     @Override
-    public void setView(View view, Object arg, WithError<Boolean,BasicError> ok) {
+    public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
+        super.setView(view, arg, handler, ok);
         _view=view;
         _wheel=((Integer)arg).intValue();
         assert(_wheel>=0 && _wheel<4);
         
-        init();
+        switch (_wheel) {
+            case LUSP:
+                _stream=_view.getStream(Log.LUSP_STREAM);
+                break;
+            case RUSP:
+                _stream=_view.getStream(Log.RUSP_STREAM);
+                break;
+            case LDSP:
+                _stream=_view.getStream(Log.LDSP_STREAM);
+                break;
+            case RDSP:
+                _stream=_view.getStream(Log.RDSP_STREAM);
+                break;
+        }
+        if (_stream==null) {
+            ok.setValue(false);
+            return;
+        }
         
         // Check for zero stream
         for (int i=0; i<size(); i++) {
-            if (getNumeric(i)!=0)
-                return;
+            if (getNumeric(i)!=0) {
+                _stream.setMeta("hide", "true");
+               return;
+            }
         }
         
         ok.addError(new BasicError(BasicError.WARN,name()+ " trace is present but does did not record any values, ignoring it."));
@@ -89,44 +105,22 @@ public class WheelStream extends StreamBase {
 
     @Override
     public String units() {
-        return null; // Unknown
+        switch (isKPH(false)) {
+            case 1:
+                return "kph";
+            case 2:
+                return "mph";
+        }
+        return null;
     }
     
     @Override
     public int size() {
-        return _view.getStream(Log.TIME_STREAM).size();
-    }
-    
-    private void init() {
-        if (_init)
-            return;
-        
-        switch (_wheel) {
-            case LUSP:
-                _stream=_view.getStream(Log.LUSP_STREAM);
-                break;
-            case RUSP:
-                _stream=_view.getStream(Log.RUSP_STREAM);
-                break;
-            case LDSP:
-                _stream=_view.getStream(Log.LDSP_STREAM);
-                break;
-            case RDSP:
-                _stream=_view.getStream(Log.RDSP_STREAM);
-                break;
-        }
-        _stream.setMeta("hide", "true");
-        _init=true;
-    }
-    
-    @Override
-    public void validate(WithError<Boolean,BasicError> ok) {
-        init();
+        return _stream.size();
     }
     
     @Override
     public double getNumeric(int position) throws NumberFormatException {
-        init();
         return _stream.getNumeric(position);
     }
 }

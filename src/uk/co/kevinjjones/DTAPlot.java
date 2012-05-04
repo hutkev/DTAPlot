@@ -39,9 +39,16 @@ import uk.co.kevinjjones.model.ROStream;
 import uk.co.kevinjjones.model.WithError;
 import uk.co.kevinjjones.vehicle.AFRStream;
 import uk.co.kevinjjones.vehicle.SpeedStream;
+import uk.co.kevinjjones.vehicle.TempStream;
 
 public class DTAPlot {
+    
+    // Some standard colours, Williams F1 inspired ;-)
+    private static Color TEXTFG=Color.WHITE;
+    private static Color BKGD=new Color(0x041731);
+    private static Color PANEL=new Color(0x102f59);
 
+    // All the UI components
     private ZoomableChart _chart;
     private JScrollBar _chartHScroll;
     private JScrollBar _chartVScroll;
@@ -57,27 +64,19 @@ public class DTAPlot {
     private JCheckBox _turboCheck;
     private JCheckBox _waterTempCheck;
     private JCheckBox _oilTempCheck;
-    private JCheckBox _oilPressureCheck;
     private JCheckBox _airTempCheck;
     private JCheckBox _wheelSlipCheck;
-    private JCheckBox _timeSlipCheck;
-    private JComboBox _weightCombo;
+    //private JCheckBox _timeSlipCheck;
     private JButton _traceBtn;
     private JButton _clearBtn;
     private JButton _resetZoomBtn;
     private JButton _optionsBtn;
     private boolean _ignoreEvents = false;
-
-    private DTAPlot() {
-        super();
-    }
-
-    /**
-     * @param args
-     */
+    
+    // Entry, loads any files passed on command line
     public static void main(String[] args) {
         try {
-            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
             // Carry on anyway
         }
@@ -90,10 +89,18 @@ public class DTAPlot {
             p.loadFile(new File(args[i]));
         }
     }
+    
+    private DTAPlot() {
+        super();
+    }
 
+    /**
+     * Chart color picker
+     * @param index - What color # to pick
+     */
     private static Color getColor(int index) {
         Color c = Color.BLACK;
-        switch (index) {
+        switch (index % 6) {
             case 0:
                 c = new Color(228, 26, 28);
                 break;
@@ -116,6 +123,10 @@ public class DTAPlot {
         return c;
     }
 
+    /**
+     * Get next colour to use for a trace.
+     * Picks the least used color in existing traces.
+     */
     private Color getNextColor() {
 
         // Find least used color
@@ -141,27 +152,35 @@ public class DTAPlot {
         return getColor(lowest);
     }
 
+    /**
+     * Setup UI components.
+     */
     private void run() {
 
-        // Create The main frame
-        final JFrame frame = new JFrame("DTA Plot v2.0");
+        // Create The main frame sized to be OK on netbook 800x600 displays
+        final JFrame frame = new JFrame("DTA Plot v2.0 - http://westboost.github.com/");
+        frame.setMinimumSize(new Dimension(400, 400));
+        frame.setPreferredSize(new Dimension(800, 600));
+        RunManager.getInstance().setFrame(frame);
+        
         final Container content = frame.getContentPane();
+        content.setBackground(BKGD);
 
-        // Sort out the layout
+        // Top level layout is Spring
         SpringLayout layout = new SpringLayout();
         content.setLayout(layout);
 
+        // Construct the menu area, min width = 100px
         JPanel menuArea = new JPanel();
+        menuArea.setBackground(PANEL);
         GridLayout menuLayout = new GridLayout(0, 1);
         menuArea.setLayout(menuLayout);
-        menuArea.setMaximumSize(new Dimension(100, 600));
-        _lapCombo = new JComboBox();
-        _lapCombo.setToolTipText("Drag & Drop logfile(s) to load them");
+        menuArea.setMaximumSize(new Dimension(100, 0));
         menuArea.add(new JLabel("Select Session/Run"));
-        menuArea.add(_lapCombo);
+        menuArea.add(_lapCombo=new JComboBox());
         menuArea.add(_autoSplitCheck = new JCheckBox("Auto Split Runs"));
         menuArea.add(_speedCheck = new JCheckBox("Speed"));
-        menuArea.add(_timeSlipCheck = new JCheckBox("Time Lag"));
+//        menuArea.add(_timeSlipCheck = new JCheckBox("Time Lag"));
         menuArea.add(_wheelSlipCheck = new JCheckBox("Wheel Slip"));
         menuArea.add(_tpsCheck = new JCheckBox("Throttle"));
         menuArea.add(_mapCheck = new JCheckBox("MAP"));
@@ -170,27 +189,34 @@ public class DTAPlot {
         menuArea.add(_afrCheck = new JCheckBox("AFR"));
         menuArea.add(_waterTempCheck = new JCheckBox("Water Temp"));
         menuArea.add(_oilTempCheck = new JCheckBox("Oil Temp"));
-        menuArea.add(_oilPressureCheck = new JCheckBox("Oil Pressure"));
         menuArea.add(_airTempCheck = new JCheckBox("Air Temp"));
-        menuArea.add(new JLabel(""));
+        menuArea.add(new JLabel("")); // Just a spacer
+        
+        // Set checkbox fg color
+        Component[] comps = menuArea.getComponents();
+        for(Component comp : comps) {
+            if(comp instanceof JComponent && !comp.equals(_lapCombo)) {
+                ((JComponent)comp).setForeground(TEXTFG);
+            }
+        }
 
         menuArea.add(_clearBtn = new JButton("Clear Traces"));
         menuArea.add(_resetZoomBtn = new JButton("Reset Zoom"));
         menuArea.add(_traceBtn = new JButton("Other Traces..."));
         menuArea.add(_optionsBtn = new JButton("Options..."));
     
-        // Add the chart
+        // Construct the chart
         JPanel chartArea = new JPanel();
         BorderLayout chartLayout = new BorderLayout();
         chartArea.setLayout(chartLayout);
-
         _chart = new ZoomableChart();
-        _chart.setToolTipText("Drag & Drop logfile(s) to load them");
+        _chart.setBackground(PANEL);
+        _chart.setForeground(Color.WHITE);
         _chart.getAxesXBottom().get(0).setTitle("Time");
         _chart.getAxesXBottom().get(0).setPaintGrid(true);
+        _chart.getAxesXBottom().get(0).getAxisTitle().setTitleColor(Color.WHITE);
         _chart.getAxesYLeft().get(0).setTitle("");
         _chart.getAxesYLeft().get(0).setPaintGrid(true);
-        _chart.setPreferredSize(new Dimension(750, 450));
         chartArea.add(_chart, BorderLayout.CENTER);
 
         _chartHScroll = new JScrollBar(JScrollBar.HORIZONTAL);
@@ -198,10 +224,11 @@ public class DTAPlot {
         _chartVScroll = new JScrollBar(JScrollBar.VERTICAL);
         chartArea.add(_chartVScroll, BorderLayout.LINE_END);
 
+        // And the message area
         _messagesModel = new DefaultListModel();
         _messagesModel.addElement(new BasicError(BasicError.WARN, "To load a logfile, drag and drop onto graph"));
-
         _messages = new JList(_messagesModel);
+        _messages.setBackground(PANEL);
         _messages.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         _messages.setLayoutOrientation(JList.VERTICAL);
         _messages.setVisibleRowCount(-1);
@@ -209,37 +236,43 @@ public class DTAPlot {
         _messages.setFixedCellHeight(16);
         _messages.setCellRenderer(der);
         _messages.addListSelectionListener(der);
-        _messages.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         _messages.validate();
-
         JScrollPane listScroller = new JScrollPane(_messages);
-        listScroller.setPreferredSize(new Dimension(800, 75));
-        chartArea.add(listScroller, BorderLayout.PAGE_START);
-        chartArea.setPreferredSize(new Dimension(800, 600));
-
+        listScroller.setBorder(null);
+        
         // Build up
         content.add(menuArea);
+        content.add(listScroller);
         content.add(chartArea);
 
-        // Loads of constraints :-)
+        // Loads of constraints to align the three areas :-)
         layout.putConstraint(SpringLayout.WEST, menuArea,
                 5, SpringLayout.WEST, content);
         layout.putConstraint(SpringLayout.NORTH, menuArea,
                 5, SpringLayout.NORTH, content);
-
+        layout.putConstraint(SpringLayout.SOUTH, menuArea,
+                -5, SpringLayout.SOUTH, content);
+        
+        layout.putConstraint(SpringLayout.WEST, listScroller,
+                5, SpringLayout.EAST, menuArea);
+        layout.putConstraint(SpringLayout.NORTH, listScroller,
+                5, SpringLayout.NORTH, content);
+        layout.putConstraint(SpringLayout.EAST, listScroller,
+                -5, SpringLayout.EAST, content);
+        layout.putConstraint(SpringLayout.SOUTH, listScroller,
+                80, SpringLayout.NORTH, content);
+        
         layout.putConstraint(SpringLayout.WEST, chartArea,
                 5, SpringLayout.EAST, menuArea);
         layout.putConstraint(SpringLayout.NORTH, chartArea,
-                5, SpringLayout.NORTH, content);
+                5, SpringLayout.SOUTH, listScroller);
+        layout.putConstraint(SpringLayout.EAST, chartArea,
+                -5, SpringLayout.EAST, content);
+        layout.putConstraint(SpringLayout.SOUTH, chartArea,
+                -5, SpringLayout.SOUTH, content);
 
-        layout.putConstraint(SpringLayout.EAST, content,
-                5, SpringLayout.EAST, chartArea);
-        layout.putConstraint(SpringLayout.SOUTH, content,
-                5, SpringLayout.SOUTH, chartArea);
-
-        // Handle drops
+        // Handle file dropping
         FileDrop fd = new FileDrop(frame, new FileDrop.Listener() {
-
             @Override
             public void filesDropped(java.io.File[] files) {
                 RunManager mgr = RunManager.getInstance();
@@ -299,7 +332,7 @@ public class DTAPlot {
 
                     @Override
                     public void actionPerformed(ActionEvent e) {
-                        showTraces(frame, getSelectedRun());
+                        otherTraces(frame, getSelectedRun());
                     }
                 });
 
@@ -317,7 +350,6 @@ public class DTAPlot {
                         resetChartScroll();
                     }
                 });
-
 
         _resetZoomBtn.addActionListener(
                 new ActionListener() {
@@ -399,6 +431,7 @@ public class DTAPlot {
                     }
                 });
 
+        /*
         _timeSlipCheck.addItemListener(
                 new ItemListener() {
 
@@ -410,6 +443,8 @@ public class DTAPlot {
                         }
                     }
                 });
+                * 
+                */
 
         _turboCheck.addItemListener(
                 new ItemListener() {
@@ -454,7 +489,7 @@ public class DTAPlot {
                     public void itemStateChanged(ItemEvent e) {
                         if (!_ignoreEvents) {
                             RunManager.Run run = getSelectedRun();
-                            toggleTrace(run, Log.OILT_STREAM, e.getStateChange() == ItemEvent.SELECTED);
+                            toggleTrace(run, TempStream.OIL_NAME, e.getStateChange() == ItemEvent.SELECTED);
                         }
                     }
                 });
@@ -466,7 +501,7 @@ public class DTAPlot {
                     public void itemStateChanged(ItemEvent e) {
                         if (!_ignoreEvents) {
                             RunManager.Run run = getSelectedRun();
-                            toggleTrace(run, Log.WATER_STREAM, e.getStateChange() == ItemEvent.SELECTED);
+                            toggleTrace(run, TempStream.WATER_NAME, e.getStateChange() == ItemEvent.SELECTED);
                         }
                     }
                 });
@@ -478,7 +513,7 @@ public class DTAPlot {
                     public void itemStateChanged(ItemEvent e) {
                         if (!_ignoreEvents) {
                             RunManager.Run run = getSelectedRun();
-                            toggleTrace(run, Log.AIR_STREAM, e.getStateChange() == ItemEvent.SELECTED);
+                            toggleTrace(run, TempStream.AIR_NAME, e.getStateChange() == ItemEvent.SELECTED);
                         }
                     }
                 });
@@ -493,12 +528,17 @@ public class DTAPlot {
                     }
                 });
 
-        _chart.repaint();
+        // All ready to go
         frame.pack();
         frame.setVisible(true);
         setOptions();
     }
 
+    /**
+     * Load a log file.
+     * Errors are displayed on the message panel so no return needed.
+     * @param file 
+     */
     private void loadFile(File file) {
         RunManager mgr = RunManager.getInstance();
         WithError<Boolean, BasicError> ok = new WithError(true);
@@ -521,11 +561,16 @@ public class DTAPlot {
         
     }
 
-    private void showTraces(JFrame frame, RunManager.Run run) {
+    /**
+     * Display selection dialog for other traces for current run.
+     * @param frame Frame to attach dialog to
+     * @param run The current run
+     */
+    private void otherTraces(JFrame frame, RunManager.Run run) {
         final JDialog dialog = new JDialog(frame, "Other Traces", true);
 
         JPanel traceArea = new JPanel();
-        GridLayout layout = new GridLayout(0, 5);
+        GridLayout layout = new GridLayout(0, 4);
         traceArea.setLayout(layout);
 
         final ArrayList<JCheckBox> checks = new ArrayList();
@@ -537,8 +582,8 @@ public class DTAPlot {
                     || s.name().equals(SpeedStream.NAME) || s.name().equals(Log.THROT_STREAM)
                     || s.name().equals(Log.MAP_STREAM) || s.name().equals(Log.RPM_STREAM)
                     || s.name().equals(Log.TURB_STREAM) || s.name().equals(AFRStream.AFR_NAME)
-                    || s.name().equals(Log.WATER_STREAM) || s.name().equals(Log.OILT_STREAM)
-                    || s.name().equals(Log.AIR_STREAM) || s.name().equals(Log.SLIP_STREAM)) {
+                    || s.name().equals(TempStream.WATER_NAME) || s.name().equals(TempStream.OIL_NAME)
+                    || s.name().equals(TempStream.AIR_NAME) || s.name().equals(Log.SLIP_STREAM)) {
                 continue;
             }
             
@@ -548,6 +593,7 @@ public class DTAPlot {
             }
 
             JCheckBox cb = new JCheckBox(s.name());
+            cb.setSelected(findTrace(run.name() + " " + s.description())!=null);
             checks.add(cb);
             traceArea.add(cb);
         }
@@ -609,35 +655,25 @@ public class DTAPlot {
         Container content = dialog.getContentPane();
         content.add(dialogPanel);
 
-        Point l = frame.getLocation();
-        Dimension d = frame.getSize();
-
-        int cx = l.x + d.width / 2;
-        int cy = l.y + d.height / 2;
-        cx -= 400 / 2;
-        cy -= 360 / 2;
-        dialog.setBounds(cx, cy, 400, 360);
         dialog.pack();
+        dialog.setLocationRelativeTo(frame);
         dialog.setVisible(true);
+        
     }
 
+    /**
+     * Display selection dialog for global options
+     * @param frame Frame to attach dialog to
+     */
     private void setGlobalOptions(JFrame frame) {
 
-        // Create the dialog
         JDialog dialog = new JDialog(frame, "DTA System Units", true);
         Container content = dialog.getContentPane();
         OptionsDialog oDlg = new OptionsDialog();
         content.add(oDlg);
 
-        Point l = frame.getLocation();
-        Dimension d = frame.getSize();
-
-        int cx = l.x + d.width / 2;
-        int cy = l.y + d.height / 2;
-        cx -= 400 / 2;
-        cy -= 360 / 2;
-        dialog.setBounds(cx, cy, 400, 360);
         dialog.pack();
+        dialog.setLocationRelativeTo(frame);
         dialog.setVisible(true);
     }
 
@@ -799,16 +835,16 @@ public class DTAPlot {
             //_timeSlipCheck.setEnabled(run.log().hasStream(Log.TimeSlip_STREAM));
             _turboCheck.setEnabled(run.log().hasStream(Log.TURB_STREAM));
             _afrCheck.setEnabled(run.log().hasStream(Log.LAMB_STREAM));
-            _waterTempCheck.setEnabled(run.log().hasStream(Log.WATER_STREAM));
-            _oilTempCheck.setEnabled(run.log().hasStream(Log.OILT_STREAM));
-            _airTempCheck.setEnabled(run.log().hasStream(Log.AIR_STREAM));
+            _waterTempCheck.setEnabled(run.log().hasStream(TempStream.WATER_NAME));
+            _oilTempCheck.setEnabled(run.log().hasStream(TempStream.OIL_NAME));
+            _airTempCheck.setEnabled(run.log().hasStream(TempStream.AIR_NAME));
             _wheelSlipCheck.setEnabled(run.log().hasStream(Log.SLIP_STREAM));
 
             _speedCheck.setSelected(false);
             _tpsCheck.setSelected(false);
             _mapCheck.setSelected(false);
             _rpmCheck.setSelected(false);
-            _timeSlipCheck.setSelected(false);
+            //_timeSlipCheck.setSelected(false);
             _turboCheck.setSelected(false);
             _afrCheck.setSelected(false);
             _waterTempCheck.setSelected(false);
@@ -827,17 +863,17 @@ public class DTAPlot {
                     _mapCheck.setSelected(true);
                 } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.RPM_STREAM))) {
                     _rpmCheck.setSelected(true);
-                } else if (traces[i].getName().equals(name + " Time Lag")) {
-                    _timeSlipCheck.setSelected(true);
+//                } else if (traces[i].getName().equals(name + " Time Lag")) {
+//                    _timeSlipCheck.setSelected(true);
                 } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.TURB_STREAM))) {
                     _turboCheck.setSelected(true);
                 } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(AFRStream.AFR_NAME))) {
                     _afrCheck.setSelected(true);
-                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.WATER_STREAM))) {
+                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(TempStream.WATER_NAME))) {
                     _waterTempCheck.setSelected(true);
-                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.OILT_STREAM))) {
+                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(TempStream.OIL_NAME))) {
                     _oilTempCheck.setSelected(true);
-                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.AIR_STREAM))) {
+                } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(TempStream.AIR_NAME))) {
                     _airTempCheck.setSelected(true);
                 } else if (traces[i].getName().equals(name + " " + Log.getStreamDescription(Log.SLIP_STREAM))) {
                     _wheelSlipCheck.setSelected(true);
@@ -852,7 +888,7 @@ public class DTAPlot {
             _tpsCheck.setEnabled(false);
             _mapCheck.setEnabled(false);
             _rpmCheck.setEnabled(false);
-            _timeSlipCheck.setEnabled(false);
+            //_timeSlipCheck.setEnabled(false);
             _turboCheck.setEnabled(false);
             _afrCheck.setEnabled(false);
             _waterTempCheck.setEnabled(false);
@@ -904,6 +940,7 @@ public class DTAPlot {
             }
             axis.setAxisTitle(new AxisTitle(label));
             axis.setRangePolicy(new RangePolicyForcedPoint(0));
+            axis.getAxisTitle().setTitleColor(Color.WHITE);
         }
         return axis;
     }
@@ -949,24 +986,7 @@ public class DTAPlot {
         setOptions();
         _chart.zoomAll();
     }
-
-    /*
-     * private synchronized void showFuel(JFrame frame) {
-     *
-     * // Create the dialog if (getSelectedRun()==null) {
-     * JOptionPane.showMessageDialog(frame.getContentPane(),"Please load/select
-     * a run to analyse"); return; }
-     *
-     * JDialog dialog=new JDialog(frame,"AFR Analysis",true); Container content
-     * = dialog.getContentPane(); FuelView afrView=new
-     * FuelView(getSelectedRun()); content.add(afrView);
-     *
-     * Point l=frame.getLocation(); Dimension d=frame.getSize();
-     *
-     * int cx=l.x+d.width/2; int cy=l.y+d.height/2; cx-=800/2; cy-=360/2;
-     * dialog.setBounds(cx,cy,800,360); dialog.pack(); dialog.setVisible(true);
-    }
-     */
+    
     private synchronized void toggleTrace(RunManager.Run r, String streamName, boolean on) {
 
         ROStream s = r.getStream(streamName);

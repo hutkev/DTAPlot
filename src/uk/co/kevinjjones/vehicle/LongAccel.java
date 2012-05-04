@@ -15,6 +15,7 @@ limitations under the License.
  */
 package uk.co.kevinjjones.vehicle;
 
+import java.util.ArrayList;
 import uk.co.kevinjjones.Log;
 import uk.co.kevinjjones.model.*;
 
@@ -22,59 +23,78 @@ import uk.co.kevinjjones.model.*;
  * A stream provides a time series data abstraction. It implements some
  * basic statistical operations to make examining the stream easy.
  */
-public class LowThrottle extends StreamBase {
-    
-    public static String NAME="Low Throttle";
+public class LongAccel extends StreamBase {
     
     private View _view;
-    private ROStream _tps;
+    private ROStream _speed;
+    private ArrayList<Double> _accel=new ArrayList();
     
-    public LowThrottle() {
+    public LongAccel() {
     }
     
     @Override
     public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
+        super.setView(view, arg, handler, ok);
         _view=view;
-        _tps=_view.getStream(Log.THROT_STREAM);
         
-        if (_tps==null) {
+        // Must have some speed measure
+        _speed=_view.getStream(SpeedStream.NAME);
+        if (_speed==null) {
             ok.setValue(false);
+            return;
         }
-
+            
+        for (int i=0; i<_speed.size(); i++) {
+         
+            int minpos=i; 
+            if (minpos>0) minpos--;
+            if (minpos>0) minpos--;
+            int maxpos=i; 
+            if (maxpos+1<_speed.size()) maxpos++;
+            if (maxpos+1<_speed.size()) maxpos++;
+            
+                        
+            double minSpeed=_speed.getNumeric(minpos)*1000/3600;
+            double maxSpeed=_speed.getNumeric(maxpos)*1000/3600;
+            
+            double accel=(maxSpeed-minSpeed)/(0.1*(maxpos-minpos))/9.806;
+            _accel.add(accel);
+        }
     }
     
     @Override
     public String name() {
-        return NAME;
+        return "Longitudinal Accel.";
     }
     
     @Override    
     public String description() {
-        return "Throttle < 5%";
+        return name();
     }
     
     @Override    
     public String axis() {
-        return "Low Throttle";
+        return "Acceleration";
     }
 
     @Override
     public String units() {
-        return null; // Unknown
+        return "g"; // Unknown
     }
     
     @Override
     public int size() {
-        return _tps.size();
+        return _accel.size();
     }
     
     @Override
     public double getNumeric(int position) throws NumberFormatException {
-        
-        if (_tps.getNumeric(position)<5) {
-            return 1;
-        } else {
-            return 0;
+        switch (isKPH(true)) {
+            case 1:
+                return _accel.get(position);
+            case 2:
+                return _accel.get(position)/1.609;
         }
+        return 0;
     }
 }

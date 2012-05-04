@@ -93,23 +93,27 @@ public class Log extends View {
         _rawTraceData.put(TURB_STREAM, new RawTraceData("%", "Turbo", "Turbo"));
         _rawTraceData.put(LAMB_STREAM, new RawTraceData("", "AFR", "AFR"));
         _rawTraceData.put(SLIP_STREAM, new RawTraceData("%", "Wheel Slip", "Slip"));
-        _rawTraceData.put(WATER_STREAM, new RawTraceData("\u00B0C", "Water Temp", "Temperature"));
-        _rawTraceData.put(OILT_STREAM, new RawTraceData("\u00B0C", "Oil Temp", "Temperature"));
-        _rawTraceData.put(AIR_STREAM, new RawTraceData("\u00B0C", "Air Temp", "Temperature"));
+        _rawTraceData.put(WATER_STREAM, new RawTraceData(null, "Water Temp", "Temperature"));
+        _rawTraceData.put(OILT_STREAM, new RawTraceData(null, "Oil Temp", "Temperature"));
+        _rawTraceData.put(AIR_STREAM, new RawTraceData(null, "Air Temp", "Temperature"));
         _rawTraceData.put(LUSP_STREAM, new RawTraceData(null, "Left Undriven Speed", "Speed"));
         _rawTraceData.put(RUSP_STREAM, new RawTraceData(null, "Right Undriven Speed", "Speed"));
         _rawTraceData.put(LDSP_STREAM, new RawTraceData(null, "Left Driven Speed", "Speed"));
         _rawTraceData.put(RDSP_STREAM, new RawTraceData(null, "Right Driven Speed", "Speed"));
 
+        _virtualTraceData.add(new VirtualTraceData(false, LowThrottle.class));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(0)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(1)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(2)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(3)));
         _virtualTraceData.add(new VirtualTraceData(false, SpeedStream.class));
-        _virtualTraceData.add(new VirtualTraceData(false, LowThrottle.class));
         _virtualTraceData.add(new VirtualTraceData(true, Distance.class));
         _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(1)));
         _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(2)));
+        _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(1)));
+        _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(2)));
+        _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(3)));
+        _virtualTraceData.add(new VirtualTraceData(false, LongAccel.class));
     }
     
     // For rendering descriptions on the GUI
@@ -166,7 +170,7 @@ public class Log extends View {
         }
     }
 
-    public Log(File f, WithError<Boolean,BasicError> ok) throws IOException {
+    public Log(File f, ParamHandler handler, WithError<Boolean,BasicError> ok) throws IOException {
 
         // Check its readable
         if (!f.canRead()) {
@@ -257,7 +261,7 @@ public class Log extends View {
                 s = (VStream)td._streamClass.newInstance();
                 
                 WithError<Boolean,BasicError> vok=new WithError<Boolean,BasicError>(true);
-                s.setView(this,td._arg,vok);
+                s.setView(this,td._arg,handler,vok);
                 if (vok.value()) {
                     addVirtualStream(s.name(),s);
                     vs.add(s);
@@ -270,11 +274,6 @@ public class Log extends View {
             } catch (IllegalAccessException ex) {
                 ok.addError(new BasicError(ex));
             }
-        }
-        
-        // Finally validate the virtual streams
-        for (VStream v : vs) {
-            v.validate(ok);
         }
     }
 

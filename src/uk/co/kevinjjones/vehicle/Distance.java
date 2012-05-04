@@ -17,10 +17,7 @@ package uk.co.kevinjjones.vehicle;
 
 import java.util.ArrayList;
 import uk.co.kevinjjones.Log;
-import uk.co.kevinjjones.model.BasicError;
-import uk.co.kevinjjones.model.ROStream;
-import uk.co.kevinjjones.model.View;
-import uk.co.kevinjjones.model.WithError;
+import uk.co.kevinjjones.model.*;
 
 /**
  * A stream provides a time series data abstraction. It implements some
@@ -29,16 +26,21 @@ import uk.co.kevinjjones.model.WithError;
 public class Distance extends StreamBase {
     
     private View _view;
-    private boolean _init=false;
     private ROStream _speed;
+    private ParamHandler _handler;
     private ArrayList<Double> _distance=new ArrayList();
     
     public Distance() {
     }
     
     @Override
-    public void setView(View view, Object arg, WithError<Boolean,BasicError> ok) {
+    public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok) {
+        super.setView(view, arg, handler, ok);
         _view=view;
+        _handler=handler;
+        _speed=_view.getStream(SpeedStream.NAME);
+        if (_speed==null) 
+            ok.setValue(false);
     }
     
     @Override
@@ -53,12 +55,12 @@ public class Distance extends StreamBase {
     
     @Override    
     public String axis() {
-        return "Meters";
+        return "Distance";
     }
 
     @Override
     public String units() {
-        return null; // Unknown
+        return "Meters";
     }
     
     @Override
@@ -66,18 +68,20 @@ public class Distance extends StreamBase {
         return _view.getStream(Log.TIME_STREAM).size();
     }
     
+    
     @Override
     public double getNumeric(int position) throws NumberFormatException {
         
-        if (!_init) {
-            _init=true;
-            _speed=_view.getStream(SpeedStream.NAME);
-        }
-        
         while (_distance.size()<position+1) {
             double speed=_speed.getNumeric(_distance.size());
+            switch (isKPH(true)) {
+                case 0:
+                    speed=0;    // No declared unit
+                    break;
+                case 2:         // In miles
+                    speed=speed*1.609;
+            }
             
-            // TODO: Assume KPH!
             if (_distance.isEmpty())
                 _distance.add((speed*1000)/60/60/10);
             else

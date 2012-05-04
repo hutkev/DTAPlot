@@ -21,8 +21,6 @@ package uk.co.kevinjjones.model;
  */
 public interface VStream extends ROStream {
     
-    public void setView(View view, Object arg, WithError<Boolean,BasicError> ok);
-    
-    public void validate(WithError<Boolean,BasicError> ok);
+    public void setView(View view, Object arg, ParamHandler handler, WithError<Boolean,BasicError> ok);
     
 }

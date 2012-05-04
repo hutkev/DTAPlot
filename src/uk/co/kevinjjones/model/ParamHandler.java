@@ -13,34 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
  */
-package uk.co.kevinjjones.vehicle;
+package uk.co.kevinjjones.model;
 
 /**
+ * Marker interface for validator
  */
-public class Basedata  {
+public interface ParamHandler {
     
-    private static Basedata _instance = null;
-    
-    // Singleton access
-    public static Basedata getInstance() {
-        if (_instance == null) {
-            _instance = new Basedata();
-        }
-        return _instance;
-    }
-    
-    private double _weight;
-    
-    private Basedata() {
-        _weight=Double.NaN;
-    }
-    
-    double weight() {
-        return _weight;
-    }
-    
-    public void setWeight(double weight) {
-        _weight=weight;
-    }
+    public String getParameter(String name,boolean prompt);
     
 }
+
