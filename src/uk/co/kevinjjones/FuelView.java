@@ -1,29 +1,29 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ Copyright 2012 Kevin J. Jones (http://www.kevinjjones.co.uk)
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
  */
 
 /*
- * FuelView.java
- *
- * Created on 19-Oct-2011, 15:42:35
+ * This is not currently in use. Just saving in case I want to use later.
  */
 package uk.co.kevinjjones;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.util.ArrayList;
-import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 import uk.co.kevinjjones.RunManager.Run;
 
-/**
- *
- * @author kjones
- */
 public class FuelView extends javax.swing.JPanel {
 
     private Run _run;

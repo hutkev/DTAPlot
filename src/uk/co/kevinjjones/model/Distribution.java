@@ -1,5 +1,5 @@
 /**
- * Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+ * Copyright 2012 Kevin J. Jones (http://www.kevinjjones.co.uk)
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -24,7 +24,7 @@ public class Distribution<T> {
 
     private Sampler<T> _sampler;
     ArrayList<Pair<Integer, Integer>> _errorRanges;
-    private ArrayList<Sampler<T>.SamplerRangeError> _errors=new ArrayList();
+    private ArrayList<Sampler<T>.SamplerRangeError> _errors = new ArrayList();
     private int[] _count;
 
     public Distribution(Sampler<T> sampler) {

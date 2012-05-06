@@ -1,5 +1,5 @@
 /**
-Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+Copyright 2012 Kevin J. Jones (http://www.kevinjjones.co.uk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package uk.co.kevinjjones.model;
 import java.util.ArrayList;
 
 /**
- * Base sampler, converts values into integer values
+ * Basic double sampler, counts values into buckets
  */
 public class DoubleSampler extends Sampler<Double> {
     

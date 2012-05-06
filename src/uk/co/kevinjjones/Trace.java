@@ -17,6 +17,9 @@ package uk.co.kevinjjones;
 
 import info.monitorenter.gui.chart.traces.Trace2DSimple;
 
+/**
+ * Support for named traces for UI
+ */
 public class Trace extends Trace2DSimple {
     
     public Trace(String name) {

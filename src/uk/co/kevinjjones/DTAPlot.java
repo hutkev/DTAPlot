@@ -544,8 +544,6 @@ public class DTAPlot {
         WithError<Boolean, BasicError> ok = new WithError(true);
         try {
             mgr.addLogfile(file, ok);
-        } catch (RTException ex) {
-            ok.addError(new BasicError(ex));
         } catch (IOException ex) {
             ok.addError(new BasicError(ex));
         }
@@ -678,11 +676,7 @@ public class DTAPlot {
     }
 
     private void setAutoSplit(Container content, boolean on) {
-        try {
-            RunManager.getInstance().setAutoSplit(on);
-        } catch (RTException ex) {
-            JOptionPane.showMessageDialog(content, ex.getMessage());
-        }
+        RunManager.getInstance().setAutoSplit(on);
     }
 
     private synchronized void addedLogs() {

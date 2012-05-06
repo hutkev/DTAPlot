@@ -1,5 +1,12 @@
 
-TODO:
+DTAPlot:
 
-    Add Fuel Pressure trace
-    General Tidy Up
+This is log file analyser for DTA ECUs. You can use it to load log files and
+display various traces showing how the engines and car is performing. It
+should be very easy and quick to use so that you can get quick turn around
+on any questions you might want to answer about how things are running.
+
+Pre-compiled binaries and a manual are available at http://westboost.github.com/.
+
+Kev 
+4th May 2012

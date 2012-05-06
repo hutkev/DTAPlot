@@ -15,22 +15,34 @@
  */
 package uk.co.kevinjjones;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
-import javax.swing.JDialog;
+import javax.swing.*;
 import uk.co.kevinjjones.model.*;
 import uk.co.kevinjjones.vehicle.SpeedStream;
 
+/**
+ * Manager for all run data
+ */
 public class RunManager implements ParamHandler {
 
+    /**
+     * A stream wrapper for RunManager records
+     */
     public class RunStream implements ROStream {
 
         private ROStream _stream;
@@ -122,6 +134,9 @@ public class RunManager implements ParamHandler {
         }
     }
 
+    /**
+     * A single Run wrapper
+     */
     public class Run {
 
         private String _prefix;
@@ -129,9 +144,6 @@ public class RunManager implements ParamHandler {
         private int _start;
         private int _end;
         private boolean _isSplit;
-        private double[] _distance;
-        private double[] _timeSlip;
-        private double[] _lambdaData;
 
         public Run(String prefix, Log log, int start, int end, boolean isSplit) {
             _prefix = prefix;
@@ -182,21 +194,12 @@ public class RunManager implements ParamHandler {
             }
             return new RunStream(_log.getStream(index), _start, _end - _start);
         }
+        
         /*
-         *
-         * public void recalc(double[] maxDistance) { _timeSlip = new
-         * double[length()]; for (int i = 0; i < length() && i <
-         * maxDistance.length; i++) { assert (distance(i) <= maxDistance[i]);
-         *
-         * // Count forward time slots until we reach same distance int t = i;
-         * while (t < length() && distance(t) <= maxDistance[i]) { t++; }
-         * _timeSlip[i] = t - i; } }
-         *
-         * public double speedNative(int i) { return _log.speed(_start + i); }
-         *
-         * public double speedKPH(int i) { if (isKPH()) { return speedNative(i);
-         * } else { return 1.609344 * speedNative(i); } }
-         *
+         * Saving for later...
+         */
+
+        /*
          * public double degrees(int i) {
          *
          * if (_log.hasLeftSpeed() && _log.hasRightSpeed()) {
@@ -219,29 +222,17 @@ public class RunManager implements ParamHandler {
          * (rightTurn) { return c.getLatAccel(ls, rs); } else { return
          * -c.getLatAccel(rs, ls); } } return 0; }
          *
-         * public double timeSlip(int i) { return _timeSlip[i] / 10; }
-         *
-         * public double rpm(int i) { return _log.rpm(_start + i); }
-         *
-         * public double tps(int i) { return _log.tps(_start + i); }
-         *
-         * public double map(int i) { return _log.map(_start + i); }
-         *
-         * public double turbo(int i) { return _log.turbo(_start + i); }
-         *
-         * public double boost(int i) { return _log.boost(_start + i); }
-         *
          * public double lambda(int index) { if (_lambdaData == null) {
          *
-         * // Populate with shift _lambdaData = new double[length()]; for (int j
-         * = 0; j < _lambdaData.length; j++) { int idx = (j + lambdaDelay()) %
+         * // Populate with shift _lambdaData = new double[length()]; for (int
+         * j = 0; j < _lambdaData.length; j++) { int idx = (j + lambdaDelay()) %
          * (_end - _start); _lambdaData[j] = _log.lambda(_start + idx); }
          *
-         * // Exclude 'bad' section where MAP<80 || map is falling // by 3% over
-         * 0.5 seconds. for (int i = 0; i < _lambdaData.length; i++) {
+         * // Exclude 'bad' section where MAP<80 || map is falling // by 3%
+         * over 0.5 seconds. for (int i = 0; i < _lambdaData.length; i++) {
          *
-         * // Scan for a switch to bad int r = i; int startBad = 0; while (r + 1
-         * < _lambdaData.length) { double m = map(r); if (m < 80) { startBad =
+         * // Scan for a switch to bad int r = i; int startBad = 0; while (r +
+         * 1 < _lambdaData.length) { double m = map(r); if (m < 80) { startBad =
          * r; break; } double d = (map(r + 1) - m) / m; if (d < -0.01) {
          * startBad = r; break; } r++; }
          *
@@ -257,24 +248,6 @@ public class RunManager implements ParamHandler {
          * _lambdaData[p] = 0; } i = k; break; } } } } } }
          *
          * return _lambdaData[index]; }
-         *
-         * public double water(int i) { return _log.water(_start + i); }
-         *
-         * public double airT(int i) { return _log.airT(_start + i); }
-         *
-         * public double oilT(int i) { return _log.oilT(_start + i); }
-         *
-         * public double oilP(int i) { return _log.oilP(_start + i); }
-         *
-         * public double wheelSlip(int i) { return _log.slip(_start + i); }
-         *
-         * public boolean isKPA() { return _log.isKPA(); }
-         *
-         * public boolean isKPH() { return _log.isKPH(); }
-         *
-         * public boolean isDegC() { return _log.isDegC(); }
-         *
-         * public boolean isLambda() { return _log.isLambda(); }
          *
          */
     }
@@ -301,6 +274,7 @@ public class RunManager implements ParamHandler {
         return _instance;
     }
 
+    // Set UI frame for allow dialog boxes to be setup
     public void setFrame(Frame frame) {
         _frame = frame;
     }
@@ -328,7 +302,7 @@ public class RunManager implements ParamHandler {
         return null;
     }
 
-    public void addLogfile(File file, WithError<Boolean, BasicError> ok) throws RTException, IOException {
+    public void addLogfile(File file, WithError<Boolean, BasicError> ok) throws IOException {
 
         // Parse logile and load runs from it
         Log l = new Log(file, this, ok);
@@ -478,14 +452,62 @@ public class RunManager implements ParamHandler {
         return -1;
     }
 
-    private void flushPrefs() throws RTException {
+    private void flushPrefs() {
         Preferences prefs = Preferences.userNodeForPackage(RunManager.class);
         prefs.putInt("KPH2", _KPH);
         prefs.putBoolean("AutoSplit", _autoSplit);
         try {
             prefs.flush();
+            throw new BackingStoreException("Test");
         } catch (BackingStoreException ex) {
-            throw new RTException("Failed to save user preferences", ex);
+            final JDialog dialog = new JDialog(_frame, "Error", true);
+            JPanel displayArea = new JPanel();
+            displayArea.setLayout(new BoxLayout(displayArea, BoxLayout.PAGE_AXIS));
+
+            JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+            displayArea.add(panel);
+            panel.add(new JLabel("Message:"));
+            panel.add(new JLabel("Failed to save user preferences"));
+
+            JPanel epanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+            displayArea.add(epanel);
+
+            epanel.add(new JLabel("Exception:"));
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw, true);
+            ex.printStackTrace(pw);
+            pw.flush();
+            sw.flush();
+            epanel.add(new JLabel("<html>" + sw.toString().replaceAll("\n", "<br>")));
+
+            JPanel buttonArea = new JPanel();
+            FlowLayout buttonLayout = new FlowLayout(FlowLayout.RIGHT);
+            buttonArea.setLayout(buttonLayout);
+            JButton okBtn = new JButton("OK");
+            buttonArea.add(okBtn);
+
+            okBtn.addActionListener(
+                    new ActionListener() {
+
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                            dialog.setVisible(false);
+                        }
+                    });
+
+            JPanel dialogPanel = new JPanel();
+            BorderLayout dialogLayout = new BorderLayout();
+            dialogPanel.setLayout(dialogLayout);
+
+            dialogPanel.add(displayArea, BorderLayout.CENTER);
+            dialogPanel.add(buttonArea, BorderLayout.PAGE_END);
+
+            Container content = dialog.getContentPane();
+            content.add(dialogPanel);
+
+            dialog.pack();
+            dialog.setLocationRelativeTo(_frame);
+            dialog.setVisible(true);
         }
     }
 
@@ -493,7 +515,7 @@ public class RunManager implements ParamHandler {
         return _autoSplit;
     }
 
-    public void setAutoSplit(boolean isAutoSplit) throws RTException {
+    public void setAutoSplit(boolean isAutoSplit) {
         _autoSplit = isAutoSplit;
         flushPrefs();
     }
@@ -502,12 +524,12 @@ public class RunManager implements ParamHandler {
         return _KPH;
     }
 
-    public void setKPH(boolean isKPH) throws RTException {
+    public void setKPH(boolean isKPH) {
         _KPH = isKPH ? 1 : 2;
         flushPrefs();
     }
 
-    public void unsetKPH() throws RTException {
+    public void unsetKPH() {
         _KPH = 0;
         flushPrefs();
     }

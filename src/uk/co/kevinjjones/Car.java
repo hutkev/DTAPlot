@@ -1,5 +1,5 @@
-/**
- Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+/*
+ Copyright 2012 Kevin J. Jones (http://www.kevinjjones.co.uk)
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 package uk.co.kevinjjones;
 
 /**
- * 
+ * This is not currently in use, just being saved in case I want to
+ * use again later.
  */
 public class Car {
     

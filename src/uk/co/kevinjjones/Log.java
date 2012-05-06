@@ -1,5 +1,5 @@
-/**
-Copyright 2011 Kevin J. Jones (http://www.kevinjjones.co.uk)
+/*
+Copyright 2012 Kevin J. Jones (http://www.kevinjjones.co.uk)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,11 @@ import java.util.Map;
 import uk.co.kevinjjones.model.*;
 import uk.co.kevinjjones.vehicle.*;
 
+/**
+ * Wrapper for a single log file.
+ * Responsible for loading the file and also setting up the "streams" that are
+ * used to access the data.
+ */
 public class Log extends View {
 
     private String _name;
@@ -51,6 +56,9 @@ public class Log extends View {
     public final static String A1VAL_STREAM="A1 VAL";
     public final static String A2VAL_STREAM="A2 VAL";
 
+    /**
+     * Metadata container for stream found in the files.
+     */
     static class RawTraceData {
         public String _units;
         public String _desc;
@@ -64,6 +72,9 @@ public class Log extends View {
         }
     }
     
+    /**
+     * Metadata container for virtual streams that augment the log data.
+     */
     static class VirtualTraceData {
         public boolean _rebase;
         public Class _streamClass;
@@ -85,7 +96,10 @@ public class Log extends View {
     
     private final static Map<String,RawTraceData> _rawTraceData=new HashMap();
     private final static ArrayList<VirtualTraceData> _virtualTraceData=new ArrayList();
-    
+
+    /**
+     * The metadata.
+     */
     static {
         _rawTraceData.put(THROT_STREAM, new RawTraceData("%", "Throttle Position", "Throttle"));
         _rawTraceData.put(MAP_STREAM, new RawTraceData(null, "MAP", "Pressure"));
@@ -101,22 +115,22 @@ public class Log extends View {
         _rawTraceData.put(LDSP_STREAM, new RawTraceData(null, "Left Driven Speed", "Speed"));
         _rawTraceData.put(RDSP_STREAM, new RawTraceData(null, "Right Driven Speed", "Speed"));
 
-        _virtualTraceData.add(new VirtualTraceData(false, LowThrottle.class));
+        _virtualTraceData.add(new VirtualTraceData(false, LowThrottleStream.class));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(0)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(1)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(2)));
         _virtualTraceData.add(new VirtualTraceData(false, WheelStream.class,new Integer(3)));
         _virtualTraceData.add(new VirtualTraceData(false, SpeedStream.class));
-        _virtualTraceData.add(new VirtualTraceData(true, Distance.class));
+        _virtualTraceData.add(new VirtualTraceData(true, DistanceStream.class));
         _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(1)));
         _virtualTraceData.add(new VirtualTraceData(false, AFRStream.class, new Integer(2)));
         _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(1)));
         _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(2)));
         _virtualTraceData.add(new VirtualTraceData(false, TempStream.class, new Integer(3)));
-        _virtualTraceData.add(new VirtualTraceData(false, LongAccel.class));
+        _virtualTraceData.add(new VirtualTraceData(false, LongAccelStream.class));
     }
     
-    // For rendering descriptions on the GUI
+    // For rendering descriptions on the UI
     public static String getStreamDescription(String name) {
         RawTraceData rtd=_rawTraceData.get(name);
         if (rtd!=null && rtd._desc!=null)
@@ -124,7 +138,13 @@ public class Log extends View {
         return name;
     }
     
-    static byte[] readFile(FileInputStream fis) throws Exception {
+    /**
+     * File reader helper
+     * @param fis The file to return
+     * @return The file contents
+     * @throws IOException 
+     */
+    static byte[] readFile(FileInputStream fis) throws IOException {
         InputStream in = null;
         byte[] out = new byte[0];
 
@@ -159,17 +179,13 @@ public class Log extends View {
         return out;
     }
 
-    public class LogException extends RTException {
-
-        public LogException(String error) {
-            super(error);
-        }
-
-        public LogException(String error, Exception e) {
-            super(error, e);
-        }
-    }
-
+    /**
+     * Construct a new log file wrapper
+     * @param f The log file
+     * @param handler Handler for asking UI questions about data format
+     * @param ok Error/warning handler
+     * @throws IOException 
+     */
     public Log(File f, ParamHandler handler, WithError<Boolean,BasicError> ok) throws IOException {
 
         // Check its readable
@@ -187,7 +203,7 @@ public class Log extends View {
         try {
             fis = new FileInputStream(f);
             data = readFile(fis);
-        } catch (Exception e) {
+        } catch (IOException e) {
             ok.addError(new BasicError("A file reading error occured reading the file "
                     + f.getAbsolutePath(),e));
             ok.setValue(Boolean.FALSE);
