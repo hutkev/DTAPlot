@@ -458,7 +458,6 @@ public class RunManager implements ParamHandler {
         prefs.putBoolean("AutoSplit", _autoSplit);
         try {
             prefs.flush();
-            throw new BackingStoreException("Test");
         } catch (BackingStoreException ex) {
             final JDialog dialog = new JDialog(_frame, "Error", true);
             JPanel displayArea = new JPanel();
