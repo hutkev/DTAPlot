@@ -35,7 +35,6 @@ class BasicErrorRenderer extends JButton implements ListCellRenderer, ListSelect
 
     public BasicErrorRenderer(JFrame frame) {
         _frame=frame;
-        setOpaque(true);
         setHorizontalAlignment(SwingConstants.LEFT);
     }
     
@@ -79,9 +78,6 @@ class BasicErrorRenderer extends JButton implements ListCellRenderer, ListSelect
         setIcon(getIcon(de._type));
         setBorderPainted(false);
         setMargin(new Insets(0,0,0,0));
-        setBackground(new Color(0x102f59));
-        setForeground(Color.WHITE);
-
         return this;
     }
 

@@ -43,10 +43,10 @@ import uk.co.kevinjjones.vehicle.TempStream;
 
 public class DTAPlot {
     
-    // Some standard colours, Williams F1 inspired ;-)
-    private static Color TEXTFG=Color.WHITE;
-    private static Color BKGD=new Color(0x041731);
-    private static Color PANEL=new Color(0x102f59);
+    // Some standard colours
+    private static Color TEXTCOLOUR=Color.BLACK;
+    private static Color BKGDCOLOUR=new Color(0x041731);
+    private static Color PANELCOLOUR=Color.WHITE;
 
     // All the UI components
     private ZoomableChart _chart;
@@ -158,13 +158,13 @@ public class DTAPlot {
     private void run() {
 
         // Create The main frame sized to be OK on netbook 800x600 displays
-        final JFrame frame = new JFrame("DTA Plot v2.0 - http://westboost.github.com/");
+        final JFrame frame = new JFrame("DTA Plot v2.1 - http://westboost.github.com/");
         frame.setMinimumSize(new Dimension(400, 400));
         frame.setPreferredSize(new Dimension(800, 600));
         RunManager.getInstance().setFrame(frame);
         
         final Container content = frame.getContentPane();
-        content.setBackground(BKGD);
+        content.setBackground(BKGDCOLOUR);
 
         // Top level layout is Spring
         SpringLayout layout = new SpringLayout();
@@ -172,7 +172,7 @@ public class DTAPlot {
 
         // Construct the menu area, min width = 100px
         JPanel menuArea = new JPanel();
-        menuArea.setBackground(PANEL);
+        menuArea.setBackground(PANELCOLOUR);
         GridLayout menuLayout = new GridLayout(0, 1);
         menuArea.setLayout(menuLayout);
         menuArea.setMaximumSize(new Dimension(100, 0));
@@ -196,7 +196,7 @@ public class DTAPlot {
         Component[] comps = menuArea.getComponents();
         for(Component comp : comps) {
             if(comp instanceof JComponent && !comp.equals(_lapCombo)) {
-                ((JComponent)comp).setForeground(TEXTFG);
+                ((JComponent)comp).setForeground(TEXTCOLOUR);
             }
         }
 
@@ -210,11 +210,8 @@ public class DTAPlot {
         BorderLayout chartLayout = new BorderLayout();
         chartArea.setLayout(chartLayout);
         _chart = new ZoomableChart();
-        _chart.setBackground(PANEL);
-        _chart.setForeground(Color.WHITE);
         _chart.getAxesXBottom().get(0).setTitle("Time");
         _chart.getAxesXBottom().get(0).setPaintGrid(true);
-        _chart.getAxesXBottom().get(0).getAxisTitle().setTitleColor(Color.WHITE);
         _chart.getAxesYLeft().get(0).setTitle("");
         _chart.getAxesYLeft().get(0).setPaintGrid(true);
         chartArea.add(_chart, BorderLayout.CENTER);
@@ -228,7 +225,7 @@ public class DTAPlot {
         _messagesModel = new DefaultListModel();
         _messagesModel.addElement(new BasicError(BasicError.WARN, "To load a logfile, drag and drop onto graph"));
         _messages = new JList(_messagesModel);
-        _messages.setBackground(PANEL);
+        _messages.setBackground(PANELCOLOUR);
         _messages.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         _messages.setLayoutOrientation(JList.VERTICAL);
         _messages.setVisibleRowCount(-1);
@@ -934,7 +931,6 @@ public class DTAPlot {
             }
             axis.setAxisTitle(new AxisTitle(label));
             axis.setRangePolicy(new RangePolicyForcedPoint(0));
-            axis.getAxisTitle().setTitleColor(Color.WHITE);
         }
         return axis;
     }
