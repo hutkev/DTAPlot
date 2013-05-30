@@ -160,7 +160,7 @@ public class DTAPlot {
         // Create The main frame sized to be OK on netbook 800x600 displays
         final JFrame frame = new JFrame("DTA Plot v2.1 - http://westboost.github.com/");
         frame.setMinimumSize(new Dimension(400, 400));
-        frame.setPreferredSize(new Dimension(800, 600));
+        frame.setPreferredSize(new Dimension(1280, 720));
         RunManager.getInstance().setFrame(frame);
         
         final Container content = frame.getContentPane();
