@@ -30,9 +30,11 @@ import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.SortedSet;
 import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
 import net.iharder.dnd.FileDrop;
 import uk.co.kevinjjones.model.BasicError;
 import uk.co.kevinjjones.model.ROStream;
@@ -75,11 +77,8 @@ public class DTAPlot {
     
     // Entry, loads any files passed on command line
     public static void main(String[] args) {
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            // Carry on anyway
-        }
+        
+        DTAPlot.initializeFontSize(125);
         DTAPlot p = new DTAPlot();
         p.run();
 
@@ -1088,4 +1087,24 @@ public class DTAPlot {
             }
         }
     }
+    
+    public static void initializeFontSize(int scale) {
+        float multiplier = scale / 100.0f;
+        UIDefaults defaults = UIManager.getDefaults();
+        int i = 0;
+        for (Enumeration e = defaults.keys(); e.hasMoreElements(); i++) {
+            Object key = e.nextElement();
+            Object value = defaults.get(key);
+            if (value instanceof Font) {
+                Font font = (Font) value;
+                int newSize = Math.round(font.getSize() * multiplier);
+                if (value instanceof FontUIResource) {
+                    UIManager.put(key, new FontUIResource(font.getName(), font.getStyle(), newSize));
+                } else {
+                    UIManager.put(key, new Font(font.getName(), font.getStyle(), newSize));
+                }
+            }
+        }
+    }
+        
 }
