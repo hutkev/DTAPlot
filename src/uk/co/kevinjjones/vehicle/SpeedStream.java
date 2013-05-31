@@ -94,21 +94,31 @@ public class SpeedStream extends StreamBase {
     public int size() {
         return _view.getStream(Log.TIME_STREAM).size();
     }
+    
+    private double safeAverage(double v1, double v2) {
+        if (v1 != 0 && v2 != 0) {
+            return (v1+v2)/2;
+        } else if (v1 != 0) {
+            return v1;
+        } else {
+            return v2;
+        }
+    }
 
     @Override
     public double getNumeric(int position) throws NumberFormatException {
 
         if (_lusp != null && _rusp != null && _ldsp != null && _rdsp != null) {
-            // With four wheel sensors we track min under accel
-            // and max under braking, the switch over is made by looking
+            // With four wheel sensors we track undriven under accel
+            // and driven under braking by looking at tps 
             // at tps
-            double avgDriven = (_ldsp.getNumeric(position) + _rdsp.getNumeric(position)) / 2;
-            double avgUndriven = (_lusp.getNumeric(position) + _rusp.getNumeric(position)) / 2;
+            double avgDriven = safeAverage(_ldsp.getNumeric(position), _rdsp.getNumeric(position));
+            double avgUndriven = safeAverage(_lusp.getNumeric(position), _rusp.getNumeric(position));
 
-            if (_lowt != null && _lowt.getNumeric(position) == 0) {
-                return Math.max(avgDriven, avgUndriven);
+            if (_lowt != null && _lowt.getNumeric(position) == 1) {
+                return avgDriven;
             } else {
-                return Math.min(avgDriven, avgUndriven);
+                return avgUndriven;
             }
         } else if (_lusp != null && _rusp != null) {
             // With only 2 undriven go for max to remove lock ups
