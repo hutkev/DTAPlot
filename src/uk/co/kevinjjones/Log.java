@@ -258,7 +258,7 @@ public class Log extends View {
                         " values, there should be "+streams.length+"."));
                 ok.setValue(Boolean.FALSE);                
             } else {
-                for (int r=0;r<streams.length-1;r++) {
+                for (int r=0;r<streams.length;r++) {
                     streams[r].addData(row[r].trim());
                 }
             }
