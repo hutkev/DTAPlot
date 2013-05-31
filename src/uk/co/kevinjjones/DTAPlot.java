@@ -169,7 +169,8 @@ public class DTAPlot {
 
         // Construct the menu area, min width = 100px
         JPanel menuArea = new JPanel();
-        GridLayout menuLayout = new GridLayout(0, 1);
+        menuArea.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+        GridLayout menuLayout = new GridLayout(0, 1, 0, 5);
         menuArea.setLayout(menuLayout);
         menuArea.setMaximumSize(new Dimension(100, 0));
         menuArea.add(new JLabel("Select Session/Run"));
