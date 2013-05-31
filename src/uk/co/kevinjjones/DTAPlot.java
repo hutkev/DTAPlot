@@ -45,10 +45,8 @@ import uk.co.kevinjjones.vehicle.TempStream;
 
 public class DTAPlot {
     
-    // Some standard colours
-    private static Color TEXTCOLOUR=Color.BLACK;
+    // Main backgroud colour
     private static Color BKGDCOLOUR=new Color(0x041731);
-    private static Color PANELCOLOUR=Color.WHITE;
 
     // All the UI components
     private ZoomableChart _chart;
@@ -171,7 +169,6 @@ public class DTAPlot {
 
         // Construct the menu area, min width = 100px
         JPanel menuArea = new JPanel();
-        menuArea.setBackground(PANELCOLOUR);
         GridLayout menuLayout = new GridLayout(0, 1);
         menuArea.setLayout(menuLayout);
         menuArea.setMaximumSize(new Dimension(100, 0));
@@ -190,14 +187,6 @@ public class DTAPlot {
         menuArea.add(_oilTempCheck = new JCheckBox("Oil Temp"));
         menuArea.add(_airTempCheck = new JCheckBox("Air Temp"));
         menuArea.add(new JLabel("")); // Just a spacer
-        
-        // Set checkbox fg color
-        Component[] comps = menuArea.getComponents();
-        for(Component comp : comps) {
-            if(comp instanceof JComponent && !comp.equals(_lapCombo)) {
-                ((JComponent)comp).setForeground(TEXTCOLOUR);
-            }
-        }
 
         menuArea.add(_clearBtn = new JButton("Clear Traces"));
         menuArea.add(_resetZoomBtn = new JButton("Reset Zoom"));
@@ -224,7 +213,6 @@ public class DTAPlot {
         _messagesModel = new DefaultListModel();
         _messagesModel.addElement(new BasicError(BasicError.WARN, "To load a logfile, drag and drop onto graph"));
         _messages = new JList(_messagesModel);
-        _messages.setBackground(PANELCOLOUR);
         _messages.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         _messages.setLayoutOrientation(JList.VERTICAL);
         _messages.setVisibleRowCount(-1);
