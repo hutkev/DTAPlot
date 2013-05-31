@@ -78,6 +78,7 @@ class BasicErrorRenderer extends JButton implements ListCellRenderer, ListSelect
         setIcon(getIcon(de._type));
         setBorderPainted(false);
         setMargin(new Insets(0,0,0,0));
+        setBackground(Color.WHITE);
         return this;
     }
 

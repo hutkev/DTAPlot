@@ -229,7 +229,7 @@ public class DTAPlot {
         _messages.setLayoutOrientation(JList.VERTICAL);
         _messages.setVisibleRowCount(-1);
         BasicErrorRenderer der = new BasicErrorRenderer(frame);
-        _messages.setFixedCellHeight(16);
+        _messages.setFixedCellHeight(20);
         _messages.setCellRenderer(der);
         _messages.addListSelectionListener(der);
         _messages.validate();
@@ -252,21 +252,21 @@ public class DTAPlot {
         layout.putConstraint(SpringLayout.WEST, listScroller,
                 5, SpringLayout.EAST, menuArea);
         layout.putConstraint(SpringLayout.NORTH, listScroller,
-                5, SpringLayout.NORTH, content);
+                -85, SpringLayout.SOUTH, content);
         layout.putConstraint(SpringLayout.EAST, listScroller,
                 -5, SpringLayout.EAST, content);
         layout.putConstraint(SpringLayout.SOUTH, listScroller,
-                80, SpringLayout.NORTH, content);
+               -5, SpringLayout.SOUTH, content);
         
         layout.putConstraint(SpringLayout.WEST, chartArea,
                 5, SpringLayout.EAST, menuArea);
-        layout.putConstraint(SpringLayout.NORTH, chartArea,
-                5, SpringLayout.SOUTH, listScroller);
         layout.putConstraint(SpringLayout.EAST, chartArea,
                 -5, SpringLayout.EAST, content);
+        layout.putConstraint(SpringLayout.NORTH, chartArea,
+                5, SpringLayout.NORTH, content);
         layout.putConstraint(SpringLayout.SOUTH, chartArea,
-                -5, SpringLayout.SOUTH, content);
-
+                -5, SpringLayout.NORTH, listScroller);
+                
         // Handle file dropping
         FileDrop fd = new FileDrop(frame, new FileDrop.Listener() {
             @Override
