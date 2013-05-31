@@ -1,12 +1,10 @@
 
-DTAPlot:
+DTAPlot
+=======
 
 This is log file analyser for DTA ECUs. You can use it to load log files and
-display various traces showing how the engines and car is performing. It
-should be very easy and quick to use so that you can get quick turn around
-on any questions you might want to answer about how things are running.
+display various traces graphically showing how things are performing.
 
-Pre-compiled binaries and a manual are available at http://westboost.github.com/.
+I use this with a DTS S80, it has not been tested with anything else but I
+would expect it to work with any S-Series ECU.
 
-Kev 
-4th May 2012
