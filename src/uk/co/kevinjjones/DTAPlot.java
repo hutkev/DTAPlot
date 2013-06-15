@@ -981,6 +981,7 @@ public class DTAPlot {
                 IAxis axis = getAxis(axisName + suffix);
                 trace = new Trace(r.name() + " " + s.description());
                 trace.setColor(getNextColor());
+                trace.setStroke(new BasicStroke(2));
                 _chart.addTrace(trace, _chart.getAxesXBottom().get(0), axis);
 
                 for (int i = 0; i < r.length(); i++) {
