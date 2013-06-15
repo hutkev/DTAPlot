@@ -5,6 +5,6 @@ DTAPlot
 This is log file analyser for DTA ECUs. You can use it to load log files and
 display various traces graphically showing how things are performing.
 
-I use this with a DTS S80, it has not been tested with anything else but I
+I use this with a DTA S80, it has not been tested with anything else but I
 would expect it to work with any S-Series ECU.
 
