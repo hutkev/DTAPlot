@@ -57,16 +57,16 @@ public class WheelStream extends StreamBase {
 
         switch (_wheel) {
             case LUSP:
-                _stream = _view.getStream(Log.LUSP_STREAM);
+                _stream = new SmoothStream(_view.getStream(Log.LUSP_STREAM));
                 break;
             case RUSP:
-                _stream = _view.getStream(Log.RUSP_STREAM);
+                _stream = new SmoothStream(_view.getStream(Log.RUSP_STREAM));
                 break;
             case LDSP:
-                _stream = _view.getStream(Log.LDSP_STREAM);
+                _stream = new SmoothStream(_view.getStream(Log.LDSP_STREAM));
                 break;
             case RDSP:
-                _stream = _view.getStream(Log.RDSP_STREAM);
+                _stream = new SmoothStream(_view.getStream(Log.RDSP_STREAM));
                 break;
         }
         if (_stream == null) {
@@ -116,9 +116,9 @@ public class WheelStream extends StreamBase {
     public int size() {
         return _stream.size();
     }
-
+    
     @Override
     public double getNumeric(int position) throws NumberFormatException {
-        return _stream.getNumeric(position);
+        return _stream.getNumeric(position); 
     }
 }

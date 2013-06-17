@@ -17,7 +17,12 @@ package uk.co.kevinjjones.vehicle;
 
 import java.text.ParseException;
 import java.util.ArrayList;
-import uk.co.kevinjjones.model.*;
+import uk.co.kevinjjones.model.BasicError;
+import uk.co.kevinjjones.model.Pair;
+import uk.co.kevinjjones.model.ParamHandler;
+import uk.co.kevinjjones.model.VStream;
+import uk.co.kevinjjones.model.View;
+import uk.co.kevinjjones.model.WithError;
 
 /**
  * Base class for virtual streams.

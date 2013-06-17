@@ -76,7 +76,7 @@ public class RWStream implements ROStream {
     public void addData(String value) {
         _view.addData(_index, value);
     }
-
+    
     @Override
     public String getString(int position) {
         return _view.getString(_index, position);
